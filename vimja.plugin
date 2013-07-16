@@ -2,6 +2,6 @@
   "url": "", 
   "version": "0.1", 
   "class": "Vimja", 
-  "module": "src", 
+  "module": "vimja", 
   "authors": "rkillam"
 }
