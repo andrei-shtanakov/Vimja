@@ -1,7 +1,0 @@
-{
-  "venv": "/home/richard/.BashScripts/python/VimjaProject/VirtualEnv/bin/python", 
-  "project-type": "NINJA-Plugin-Project", 
-  "name": "Vimja", 
-  "license": "GNU General Public License v3", 
-  "description": ""
-}

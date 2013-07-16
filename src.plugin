@@ -1,7 +1,7 @@
 {
-  "url": "richard.killam@gmail.com", 
+  "url": "", 
   "version": "0.1", 
   "class": "Vimja", 
-  "module": "vimja", 
+  "module": "src", 
   "authors": "rkillam"
 }
