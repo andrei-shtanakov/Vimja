@@ -1,7 +1,31 @@
 {
+  "mainFile": "", 
+  "use-tabs": false, 
   "venv": "", 
-  "project-type": "NINJA-Plugin-Project", 
+  "relatedProjects": [], 
   "name": "Vimja", 
   "license": "Other Open Source", 
+  "url": "", 
+  "pythonPath": "python", 
+  "preExecScript": "", 
+  "additional_builtins": [], 
+  "programParams": "", 
+  "indentation": 4, 
+  "PYTHONPATH": "", 
+  "supported-extensions": [
+    ".py", 
+    ".html", 
+    ".jpg", 
+    ".png", 
+    ".ui", 
+    ".css", 
+    ".json", 
+    ".js", 
+    ".ini", 
+    ".plugin", 
+    ".txt"
+  ], 
+  "project-type": "NINJA-Plugin-Project", 
+  "postExecScript": "", 
   "description": ""
 }
