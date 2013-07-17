@@ -23,11 +23,16 @@ class Vimja(plugin.Plugin):
     def interpretKeyBindings(self, function):
         @wraps(function)
         def _inner(event):
-            return function(event)
             if True:
                 if True:
-                    event.ignore()
+                    tab = self.editor_s.get_actual_tab()
+                    cursor = tab.textCursor()
+                    cursor.beginEditBlock()
+
+                    cursor.insertText('hi')
+                    cursor.endEditBlock()
                     return
+
             return function(event)
         return _inner
         #tab = self.editor_s.get_actual_tab()
