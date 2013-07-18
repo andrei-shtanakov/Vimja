@@ -19,29 +19,54 @@ class Vimja(plugin.Plugin):
 
     '''
 
+    def switchMode(self, event):
+        tab = self.editor_s.get_actual_tab()
+        cursor = tab.textCursor()
+        cursor.beginEditBlock()
+        cursor.insertText('\n{}\n\n'.format(event))
+
+        if event[0] == Qt.Key_Escape:
+            self.mode = self.__NORMAL_MODE
+            cursor.insertText('\nnow in normal mode\n')
+
+        elif event[0] == Qt.Key_I:
+            self.mode = self.__INSERT_MODE
+            cursor.insertText('\nnow in insert mode\n')
+
+        cursor.endEditBlock()
+
     def keyEventMapper(self, event):
         ''' Takes in the key event and determines what function should be called
         in order to handle said event.
 
         '''
-
-        key = event.key()
-        customKeyEvent = (key, self.keyMap.get(key, False))
-
         tab = self.editor_s.get_actual_tab()
         cursor = tab.textCursor()
         cursor.beginEditBlock()
         cursor.insertText('\n{}\n\n'.format(self.keyMap))
 
-        cursor.insertText('\nkey: {0} | event: {1}\n'.format(*customKeyEvent))
+        key = event.key()
+        customKeyEvent = (key, self.keyMap.get(key, False))
+        function = ''
 
-        if key == Qt.Key_Escape:
-            self.mode = self.__NORMAL_MODE
-            cursor.insertText('\nnow in normal mode\n')
+        if customKeyEvent[1]:
+            function = getattr(self, customKeyEvent[1]['Function'], False)
 
-        elif key == Qt.Key_I:
-            self.mode = self.__INSERT_MODE
-            cursor.insertText('\nnow in insert mode\n')
+        cursor.insertText('{}: {}; {}\n\n'.format(
+            customKeyEvent, function, callable(function)))
+
+        if callable(function):
+            function(customKeyEvent)
+
+        #cursor.insertText('\nkey: {0} | event: {1}\n'.format(*customKeyEvent))
+
+        #if key == Qt.Key_Escape:
+            #self.mode = self.__NORMAL_MODE
+            #cursor.insertText('\nnow in normal mode\n')
+
+        #elif key == Qt.Key_I:
+            #self.mode = self.__INSERT_MODE
+            #cursor.insertText('\nnow in insert mode\n')
 
         cursor.endEditBlock()
 
@@ -121,7 +146,6 @@ class Vimja(plugin.Plugin):
         '''
 
         #If the data is a string (including unicode)
-        #This is the first check because strings are iterables
         if isinstance(data, basestring):
             #If the data is a number return it as such
             if data.isdigit():
