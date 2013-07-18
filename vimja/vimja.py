@@ -10,24 +10,24 @@ from PyQt4.QtGui import QTextCursor
 class Vimja(plugin.Plugin):
     ''' A vim plugin for the Ninja-IDE.
 
-    Gives Basic vim functionality such as the vim movements and standard commands
+    Gives Basic vim functionality such as the vim movements and standard commands.
 
     '''
 
-    def interpretKeyEvent(self, event):
+    def keyEventMapper(self, event):
+        key = event.key()
+
         tab = self.editor_s.get_actual_tab()
         cursor = tab.textCursor()
         cursor.beginEditBlock()
-        #cursor.insertText('\n{0} | {1} | {2}\n'.format(
-            #event.key(), Qt.Key_I, event.key() == Qt.Key_I))
 
-        if event.key() == Qt.Key_I:
-            self.mode = self.__INSERT_MODE
-            cursor.insertText('\nnow in insert mode\n')
-
-        elif event.key() == Qt.Key_Escape:
+        if key == Qt.Escape:
             self.mode = self.__NORMAL_MODE
             cursor.insertText('\nnow in normal mode\n')
+
+        elif key() == Qt.Key_I:
+            self.mode = self.__INSERT_MODE
+            cursor.insertText('\nnow in insert mode\n')
 
         cursor.endEditBlock()
 
@@ -53,7 +53,7 @@ class Vimja(plugin.Plugin):
             #event handling
             #TODO: Add in a check for user defined key bindings
             if event.key() == Qt.Key_Escape or self.mode == self.__NORMAL_MODE:
-                self.interpretKeyEvent(event)
+                self.keyEventMapper(event)
 
                 return
 
@@ -62,8 +62,8 @@ class Vimja(plugin.Plugin):
         return interceptKeyEvent
 
     def initialize(self):
-        ''' Creates constants for the different vim modes and sets the default mode
-        to normal. It also sets the editor's keyPressEvent handler to Vimja's interceptor
+        ''' Creates constants for the different vim modes and sets the default mode.
+        It also sets the editor's keyPressEvent handler to Vimja's interceptor
 
         '''
 
