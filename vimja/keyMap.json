@@ -1,12 +1,12 @@
 {
     "16777216": {
         "Key": "Escape",
-        "Type": "modeSwitch",
+        "Function": "switchMode",
         "Mode": "__NORMAL_MODE"
     },
     "73": {
         "Key": "I",
-        "Type": "modeSwitch",
+        "Function": "switchMode",
         "Mode": "__INSERT_MODE"
     }
 }
