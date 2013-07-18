@@ -20,17 +20,20 @@ class Vimja(plugin.Plugin):
     '''
 
     def keyEventMapper(self, event):
+        ''' Takes in the key event and determines what function should be called
+        in order to handle said event.
+
+        '''
+
         key = event.key()
+        customKeyEvent = (key, self.keyMap.get(key, False))
 
         tab = self.editor_s.get_actual_tab()
         cursor = tab.textCursor()
         cursor.beginEditBlock()
         cursor.insertText('\n{}\n\n'.format(self.keyMap))
-        if key in self.keyMap:
-            cursor.insertText('\nkey: {0} | event: {1}\n'.format(
-                key, self.keyMap[key]))
-        else:
-            cursor.insertText('\nUnknown key\n')
+
+        cursor.insertText('\nkey: {0} | event: {1}\n'.format(*customKeyEvent))
 
         if key == Qt.Key_Escape:
             self.mode = self.__NORMAL_MODE
@@ -48,10 +51,10 @@ class Vimja(plugin.Plugin):
     #TODO: Generalize interceptor to take in various events
     def getKeyEventInterceptor(self, function):
         ''' Returns a key event interceptor that determines how to handle
-            said events depending on whether or not the user is in normal mode or
-            insert mode
+        said events depending on whether or not the user is in normal mode or
+        insert mode
 
-            '''
+        '''
 
         def interceptKeyEvent(event):
             ''' Intercepts all key press events and determines how to handle
@@ -89,7 +92,7 @@ class Vimja(plugin.Plugin):
 
         #TODO: remove hardcoded path
         self.keyMap = self.__getKeyMap(
-            '/home/richard/.BashScripts/python/Projects/Vimja/vimja/keyMaps.json')
+            '/home/richard/.BashScripts/python/Projects/Vimja/vimja/keyMap.json')
 
         self.editor_s = self.locator.get_service('editor')
 
