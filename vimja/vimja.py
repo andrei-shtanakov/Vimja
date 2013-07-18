@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from collections import Iterable
+from collections import Mapping
+
 from ninja_ide.core import plugin
+from ninja_ide.tools import json_manager
+
 from PyQt4 import QtCore
 from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QTextCursor
@@ -20,6 +25,12 @@ class Vimja(plugin.Plugin):
         tab = self.editor_s.get_actual_tab()
         cursor = tab.textCursor()
         cursor.beginEditBlock()
+        cursor.insertText('\n{}\n\n'.format(self.keyMap))
+        if key in self.keyMap:
+            cursor.insertText('\nkey: {0} | event: {1}\n'.format(
+                key, self.keyMap[key]))
+        else:
+            cursor.insertText('\nUnknown key\n')
 
         if key == Qt.Key_Escape:
             self.mode = self.__NORMAL_MODE
@@ -76,6 +87,10 @@ class Vimja(plugin.Plugin):
         #set the default mode to normal mode
         self.mode = self.__NORMAL_MODE
 
+        #TODO: remove hardcoded path
+        self.keyMap = self.__getKeyMap(
+            '/home/richard/.BashScripts/python/Projects/Vimja/vimja/keyMaps.json')
+
         self.editor_s = self.locator.get_service('editor')
 
         editor = self.editor_s.get_editor()
@@ -90,6 +105,41 @@ class Vimja(plugin.Plugin):
     def get_preferences_widget(self):
         # Return a widget for customize your plugin
         pass
+
+    def __getKeyMap(self, path):
+        ''' Gets the key map from the given json file '''
+
+        return self.__convertCollection(json_manager.read_json(path))
+
+    def __convertCollection(self, data):
+        ''' Converts a collection recursively, turning all unicode strings into
+        either strings or ints
+
+        '''
+
+        #If the data is a string (including unicode)
+        #This is the first check because strings are iterables
+        if isinstance(data, basestring):
+            #If the data is a number return it as such
+            if data.isdigit():
+                return int(data)
+
+            #Else return it as a standard string
+            else:
+                return str(data)
+
+        #If we have a dictionary
+        elif isinstance(data, Mapping):
+            #Iterate through the items of said dictionary
+            return dict(map(self.__convertCollection, data.iteritems()))
+
+        #If we have an iterable
+        elif isinstance(data, Iterable):
+            #Iterate through all of items in the iterable
+            return type(data)(map(self.__convertCollection, data))
+
+        else:
+            return data
 
 # ==============================================================================
 # Dev Example Code
