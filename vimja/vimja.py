@@ -36,7 +36,11 @@ class Vimja(plugin.Plugin):
     #    of the Vimja class
     #TODO: Generalize interceptor to take in various events
     def getKeyEventInterceptor(self, function):
-        ''' Returns a key event interceptor '''
+        ''' Returns a key event interceptor that determines how to handle
+            said events depending on whether or not the user is in normal mode or
+            insert mode
+
+            '''
 
         def interceptKeyEvent(event):
             ''' Intercepts all key press events and determines how to handle
