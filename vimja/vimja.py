@@ -21,11 +21,11 @@ class Vimja(plugin.Plugin):
         cursor = tab.textCursor()
         cursor.beginEditBlock()
 
-        if key == Qt.Escape:
+        if key == Qt.Key_Escape:
             self.mode = self.__NORMAL_MODE
             cursor.insertText('\nnow in normal mode\n')
 
-        elif key() == Qt.Key_I:
+        elif key == Qt.Key_I:
             self.mode = self.__INSERT_MODE
             cursor.insertText('\nnow in insert mode\n')
 
