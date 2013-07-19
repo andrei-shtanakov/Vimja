@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+
 from collections import Iterable
 from collections import Mapping
 
@@ -19,21 +21,11 @@ class Vimja(plugin.Plugin):
 
     '''
 
+    #TODO: Implement the buffer clearing functionality of Escape
     def switchMode(self, event):
-        tab = self.editor_s.get_actual_tab()
-        cursor = tab.textCursor()
-        cursor.beginEditBlock()
-        cursor.insertText('\n{}\n\n'.format(event))
+        ''' Changes the mode of the editor '''
 
-        if event[0] == Qt.Key_Escape:
-            self.mode = self.__NORMAL_MODE
-            cursor.insertText('\nnow in normal mode\n')
-
-        elif event[0] == Qt.Key_I:
-            self.mode = self.__INSERT_MODE
-            cursor.insertText('\nnow in insert mode\n')
-
-        cursor.endEditBlock()
+        self.mode = event[1]['Mode']
 
     def keyEventMapper(self, event):
         ''' Takes in the key event and determines what function should be called
@@ -43,20 +35,20 @@ class Vimja(plugin.Plugin):
         tab = self.editor_s.get_actual_tab()
         cursor = tab.textCursor()
         cursor.beginEditBlock()
-        cursor.insertText('\n{}\n\n'.format(self.keyMap))
+        cursor.insertText('\nkeyMap: {}\n'.format(self.keyMap))
+        cursor.insertText('__dict__: {}\n'.format(self.__dict__))
 
         key = event.key()
         customKeyEvent = (key, self.keyMap.get(key, False))
-        function = ''
 
-        if customKeyEvent[1]:
-            function = getattr(self, customKeyEvent[1]['Function'], False)
+        #if customKeyEvent[1]:
+            #function = getattr(self, customKeyEvent[1]['Function'], False)
 
-        cursor.insertText('{}: {}; {}\n\n'.format(
-            customKeyEvent, function, callable(function)))
+        #cursor.insertText('{}: {}; {}\n\n'.format(
+            #customKeyEvent, function, callable(function)))
 
-        if callable(function):
-            function(customKeyEvent)
+        if customKeyEvent[1] and callable(customKeyEvent[1]['Function']):
+            customKeyEvent[1]['Function'](customKeyEvent)
 
         #cursor.insertText('\nkey: {0} | event: {1}\n'.format(*customKeyEvent))
 
@@ -107,17 +99,16 @@ class Vimja(plugin.Plugin):
         '''
 
         #vim command mode
-        self.__NORMAL_MODE = 0
+        self.__NORMAL_MODE = 1
 
         #text editor mode
-        self.__INSERT_MODE = 1
+        self.__INSERT_MODE = 2
 
         #set the default mode to normal mode
         self.mode = self.__NORMAL_MODE
 
         #TODO: remove hardcoded path
-        self.keyMap = self.__getKeyMap(
-            '/home/richard/.BashScripts/python/Projects/Vimja/vimja/keyMap.json')
+        self.keyMap = self.__getKeyMap(os.path.join(self._path, 'keyMap.json'))
 
         self.editor_s = self.locator.get_service('editor')
 
@@ -134,11 +125,16 @@ class Vimja(plugin.Plugin):
         # Return a widget for customize your plugin
         pass
 
+    # ==============================================================================
+    # PRIVATE HELPERS
+    # ==============================================================================
+
     def __getKeyMap(self, path):
         ''' Gets the key map from the given json file '''
 
         return self.__convertCollection(json_manager.read_json(path))
 
+    #TODO: Clean this logic to remove multiple returns and have only getattr call
     def __convertCollection(self, data):
         ''' Converts a collection recursively, turning all unicode strings into
         either strings or ints
@@ -147,6 +143,10 @@ class Vimja(plugin.Plugin):
 
         #If the data is a string (including unicode)
         if isinstance(data, basestring):
+            #If data is an attribute of Vimja return it as such
+            if getattr(self, data, False):
+                return getattr(self, data, False)
+
             #If the data is a number return it as such
             if data.isdigit():
                 return int(data)
