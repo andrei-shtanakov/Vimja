@@ -1,12 +1,12 @@
 {
-    "16777216": {
-        "Key": "Escape",
-        "Function": "switchMode",
-        "Mode": "__NORMAL_MODE"
-    },
     "73": {
         "Key": "I",
         "Function": "switchMode",
-        "Mode": "__INSERT_MODE"
+        "Mode": "_Vimja__INSERT_MODE"
+    },
+    "16777216": {
+        "Key": "Escape",
+        "Function": "switchMode",
+        "Mode": "_Vimja__NORMAL_MODE"
     }
 }
