@@ -1,12 +1,47 @@
 {
     "73": {
-        "Key": "I",
         "Function": "switchMode",
-        "Mode": "_Vimja__INSERT_MODE"
+        "Mode": "_Vimja__INSERT_MODE",
+        "CursorWidth": "1",
+        "Key": "I"
     },
     "16777216": {
-        "Key": "Escape",
         "Function": "switchMode",
-        "Mode": "_Vimja__NORMAL_MODE"
+        "Mode": "_Vimja__NORMAL_MODE",
+        "CursorWidth": "10",
+        "Key": "Escape"
+    },
+
+    "72": {
+        "Function": "move",
+        "Direction": {
+            "Up": "0",
+            "Right": "-1"
+        },
+        "Key": "H"
+    },
+    "74": {
+        "Function": "move",
+        "Direction": {
+            "Up": "-1",
+            "Right": "0"
+        },
+        "Key": "J"
+    },
+    "75": {
+        "Function": "move",
+        "Direction": {
+            "Up": "1",
+            "Right": "0"
+        },
+        "Key": "K"
+    },
+    "76": {
+        "Function": "move",
+        "Direction": {
+            "Up": "0",
+            "Right": "1"
+        },
+        "Key": "L"
     }
 }
