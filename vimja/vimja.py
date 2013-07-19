@@ -12,6 +12,7 @@ from ninja_ide.tools import json_manager
 from PyQt4 import QtCore
 from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QTextCursor
+from PyQt4.QtGui import QPlainTextEdit
 
 
 class Vimja(plugin.Plugin):
@@ -24,6 +25,13 @@ class Vimja(plugin.Plugin):
     # ==============================================================================
     # PRIVATE HELPERS
     # ==============================================================================
+
+    def __isNum(self, str):
+        ret = True
+        for c in str:
+            ret &= c.isdigit() or c == '.' or c == '-' or c == '+'
+
+        return ret
 
     def __getKeyMap(self, path):
         ''' Gets the key map from the given json file '''
@@ -40,12 +48,12 @@ class Vimja(plugin.Plugin):
         #If the data is a string (including unicode)
         if isinstance(data, basestring):
             #If data is an attribute of Vimja return it as such
-            if getattr(self, data, False):
+            if getattr(self, data, False) is not False:
                 return getattr(self, data, False)
 
             #If the data is a number return it as such
-            if data.isdigit():
-                return int(data)
+            if self.__isNum(data):
+                return float(data)
 
             #Else return it as a standard string
             else:
@@ -75,22 +83,23 @@ class Vimja(plugin.Plugin):
         '''
 
         #vim command mode
-        self.__NORMAL_MODE = 1
+        self.__NORMAL_MODE = 0
 
         #text editor mode
-        self.__INSERT_MODE = 2
+        self.__INSERT_MODE = 1
 
         #set the default mode to normal mode
-        self.mode = self.__NORMAL_MODE
+        self.mode = self.__INSERT_MODE
 
+        #get the key map
         self.keyMap = self.__getKeyMap(os.path.join(self._path, 'keyMap.json'))
 
-        self.editor_s = self.locator.get_service('editor')
+        self.editorService = self.locator.get_service('editor')
 
-        editor = self.editor_s.get_editor()
+        self.editor = self.editorService.get_editor()
 
         #set the editor's key press event handler to the interceptor
-        editor.keyPressEvent = self.getKeyEventInterceptor(editor.keyPressEvent)
+        self.editor.keyPressEvent = self.getKeyEventInterceptor(self.editor.keyPressEvent)
 
 # ==============================================================================
 # EVENT HANDLING
@@ -131,33 +140,22 @@ class Vimja(plugin.Plugin):
         in order to handle said event.
 
         '''
-        tab = self.editor_s.get_actual_tab()
+
+        tab = self.editorService.get_actual_tab()
         cursor = tab.textCursor()
         cursor.beginEditBlock()
+
         cursor.insertText('\nkeyMap: {}\n'.format(self.keyMap))
-        cursor.insertText('__dict__: {}\n'.format(self.__dict__))
+        cursor.insertText('pos: {}\n'.format(self.editor.pos()))
+        #cursor.insertText('__dict__: {}\n'.format(self.__dict__))
 
         key = event.key()
         customKeyEvent = (key, self.keyMap.get(key, False))
 
-        #if customKeyEvent[1]:
-            #function = getattr(self, customKeyEvent[1]['Function'], False)
-
-        #cursor.insertText('{}: {}; {}\n\n'.format(
-            #customKeyEvent, function, callable(function)))
+        cursor.insertText('key: {}; event: {}\n'.format(*customKeyEvent))
 
         if customKeyEvent[1] and callable(customKeyEvent[1]['Function']):
             customKeyEvent[1]['Function'](customKeyEvent)
-
-        #cursor.insertText('\nkey: {0} | event: {1}\n'.format(*customKeyEvent))
-
-        #if key == Qt.Key_Escape:
-            #self.mode = self.__NORMAL_MODE
-            #cursor.insertText('\nnow in normal mode\n')
-
-        #elif key == Qt.Key_I:
-            #self.mode = self.__INSERT_MODE
-            #cursor.insertText('\nnow in insert mode\n')
 
         cursor.endEditBlock()
 
@@ -170,6 +168,17 @@ class Vimja(plugin.Plugin):
         ''' Changes the mode of the editor '''
 
         self.mode = event[1]['Mode']
+        self.editor.setCursorWidth(event[1]['CursorWidth'])
+
+    def move(self, event):
+        pass
+        #tab = self.editorService.get_actual_tab()
+        #cursor = tab.textCursor()
+        #cursor.beginEditBlock()
+
+        #cursor.insertText(event[1]['Direction'])
+
+        #cursor.endEditBlock()
 
 # ==============================================================================
 # USELESS
@@ -188,7 +197,7 @@ class Vimja(plugin.Plugin):
 # Dev Example Code
 # ==============================================================================
 
-#tab = self.editor_s.get_actual_tab()
+#tab = self.editorService.get_actual_tab()
 #cursor = tab.textCursor()
 #cursor.beginEditBlock()
 
