@@ -13,6 +13,7 @@ from PyQt4 import QtCore
 from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QTextCursor
 from PyQt4.QtGui import QPlainTextEdit
+from PyQt4.QtCore import SIGNAL
 
 
 class Vimja(plugin.Plugin):
@@ -37,6 +38,12 @@ class Vimja(plugin.Plugin):
         ''' Gets the key map from the given json file '''
 
         return self.__convertCollection(json_manager.read_json(path))
+
+    def __getPos(self):
+        line = self.editor.textCursor().blockNumber()
+        col = self.editor.textCursor().columnNumber()
+
+        return (line, col)
 
     #TODO: Clean this logic to remove multiple returns and have only getattr call
     def __convertCollection(self, data):
@@ -101,6 +108,10 @@ class Vimja(plugin.Plugin):
         #set the editor's key press event handler to the interceptor
         self.editor.keyPressEvent = self.getKeyEventInterceptor(self.editor.keyPressEvent)
 
+        #self.emit(SIGNAL("cursorPositionChange(int, int)"), 109, 15)
+            #self.textCursor().blockNumber() + 1,
+            #self.textCursor().columnNumber())
+
 # ==============================================================================
 # EVENT HANDLING
 # ==============================================================================
@@ -145,14 +156,14 @@ class Vimja(plugin.Plugin):
         cursor = tab.textCursor()
         cursor.beginEditBlock()
 
-        cursor.insertText('\nkeyMap: {}\n'.format(self.keyMap))
-        cursor.insertText('pos: {}\n'.format(self.editor.pos()))
+        #cursor.insertText('\nkeyMap: {}\n'.format(self.keyMap))
         #cursor.insertText('__dict__: {}\n'.format(self.__dict__))
+        #cursor.insertText('\n{}\n'.format(self.editor.get_cursor_position()))
 
         key = event.key()
         customKeyEvent = (key, self.keyMap.get(key, False))
 
-        cursor.insertText('key: {}; event: {}\n'.format(*customKeyEvent))
+        #cursor.insertText('key: {}; event: {}\n'.format(*customKeyEvent))
 
         if customKeyEvent[1] and callable(customKeyEvent[1]['Function']):
             customKeyEvent[1]['Function'](customKeyEvent)
@@ -171,6 +182,21 @@ class Vimja(plugin.Plugin):
         self.editor.setCursorWidth(event[1]['CursorWidth'])
 
     def move(self, event):
+        self.editor.set_cursor_position(self.editor.get_cursor_position() +
+            event[1]['Direction']['Right'])
+
+        pos = self.__getPos()
+        if event[1]['Direction']['Up'] != 0:
+            self.editor.go_to_line(int(pos[0] + event[1]['Direction']['Up']))
+            curPos = self.__getPos()
+
+            while (curPos[1]) <= pos[1] and curPos[0] < pos[0]:
+                self.editor.set_cursor_position(self.editor.get_cursor_position() + 1)
+                curPos = self.__getPos()
+                pass
+
+            self.editor.set_cursor_position(self.editor.get_cursor_position() - 1)
+
         pass
         #tab = self.editorService.get_actual_tab()
         #cursor = tab.textCursor()

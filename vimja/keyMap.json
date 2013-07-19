@@ -23,7 +23,7 @@
     "74": {
         "Function": "move",
         "Direction": {
-            "Up": "-1",
+            "Up": "1",
             "Right": "0"
         },
         "Key": "J"
@@ -31,7 +31,7 @@
     "75": {
         "Function": "move",
         "Direction": {
-            "Up": "1",
+            "Up": "-1",
             "Right": "0"
         },
         "Key": "K"
