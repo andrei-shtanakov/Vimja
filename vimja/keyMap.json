@@ -14,34 +14,65 @@
 
     "72": {
         "Function": "move",
-        "Direction": {
-            "Up": "0",
-            "Right": "-1"
-        },
+        "MoveOperation": "Left",
+        "N": "1",
         "Key": "H"
     },
     "74": {
         "Function": "move",
-        "Direction": {
-            "Up": "1",
-            "Right": "0"
-        },
+        "MoveOperation": "Down",
+        "N": "1",
         "Key": "J"
     },
     "75": {
         "Function": "move",
-        "Direction": {
-            "Up": "-1",
-            "Right": "0"
-        },
+        "MoveOperation": "Up",
+        "N": "1",
         "Key": "K"
     },
     "76": {
         "Function": "move",
-        "Direction": {
-            "Up": "0",
-            "Right": "1"
-        },
+        "MoveOperation": "Right",
+        "N": "1",
         "Key": "L"
+    },
+
+    "48": {
+        "Function": "move",
+        "MoveOperation": "StartOfLine",
+        "N": "1",
+        "Key": "0"
+    },
+    "66": {
+        "Function": "move",
+        "MoveOperation": "PreviousWord",
+        "N": "1",
+        "Key": "B"
+    },
+    "87": {
+        "Function": "move",
+        "MoveOperation": "NextWord",
+        "N": "1",
+        "Key": "W"
+    },
+    "36": {
+        "Function": "move",
+        "MoveOperation": "EndOfLine",
+        "N": "1",
+        "Key": "$"
+    },
+
+    "83": {
+        "Function": "move",
+        "MoveOperation": "Start",
+        "N": "1",
+        "Key": "S"
+    },
+    "71": {
+        "Function": "move",
+        "MoveOperation": "End",
+        "N": "1",
+        "Key": "G"
     }
+
 }
