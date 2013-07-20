@@ -15,6 +15,16 @@ from PyQt4.QtGui import QTextCursor
 from PyQt4.QtGui import QPlainTextEdit
 from PyQt4.QtCore import SIGNAL
 
+#TODO: Remove as it is debug info
+import logging
+logging.basicConfig(filename='vimja.log', level=logging.DEBUG)
+logger = logging.getLogger('vimja.log')
+hdlr = logging.FileHandler('/tmp/vimja.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.WARNING)
+
 
 class Vimja(plugin.Plugin):
     ''' A vim plugin for the Ninja-IDE.
@@ -108,10 +118,6 @@ class Vimja(plugin.Plugin):
         #set the editor's key press event handler to the interceptor
         self.editor.keyPressEvent = self.getKeyEventInterceptor(self.editor.keyPressEvent)
 
-        #self.emit(SIGNAL("cursorPositionChange(int, int)"), 109, 15)
-            #self.textCursor().blockNumber() + 1,
-            #self.textCursor().columnNumber())
-
 # ==============================================================================
 # EVENT HANDLING
 # ==============================================================================
@@ -150,25 +156,23 @@ class Vimja(plugin.Plugin):
         ''' Takes in the key event and determines what function should be called
         in order to handle said event.
 
+        @arg event: KeyPressEvent that is used to determine the appropriate handler
+
+        @ret success: Returns the exit status of the event handler (True or False) or
+        it returns None if no handler was found
+
         '''
-
-        tab = self.editorService.get_actual_tab()
-        cursor = tab.textCursor()
-        cursor.beginEditBlock()
-
-        #cursor.insertText('\nkeyMap: {}\n'.format(self.keyMap))
-        #cursor.insertText('__dict__: {}\n'.format(self.__dict__))
-        #cursor.insertText('\n{}\n'.format(self.editor.get_cursor_position()))
 
         key = event.key()
         customKeyEvent = (key, self.keyMap.get(key, False))
 
-        #cursor.insertText('key: {}; event: {}\n'.format(*customKeyEvent))
-
         if customKeyEvent[1] and callable(customKeyEvent[1]['Function']):
-            customKeyEvent[1]['Function'](customKeyEvent)
+            success = customKeyEvent[1]['Function'](customKeyEvent)
 
-        cursor.endEditBlock()
+        else:
+            success = None
+
+        return success
 
 # ==============================================================================
 # CUSTOM EVENT HANDLERS
@@ -176,35 +180,43 @@ class Vimja(plugin.Plugin):
 
     #TODO: Implement the buffer clearing functionality of Escape
     def switchMode(self, event):
-        ''' Changes the mode of the editor '''
+        ''' Changes the mode of the editor
+        @arg event: tuple containing a mode dictionary created from the keyPressEvent and
+        it's corresponding keyMap json object
+
+        @ret success: returns True
+        '''
 
         self.mode = event[1]['Mode']
         self.editor.setCursorWidth(event[1]['CursorWidth'])
 
+        return True
+
+    #TODO: Change the jump to head of document from S to gg to meet vim defaults
+    #TODO: Change the jump to bottom to be G as opposed to non-case sensitive
+    #FIXME: After moving in any non up/down direction any subsequent up down movement
+    #    jumps the cursor to the start of the line
     def move(self, event):
-        self.editor.set_cursor_position(self.editor.get_cursor_position() +
-            event[1]['Direction']['Right'])
+        ''' Moves the cursor
+        @arg event: tuple containing a movement dictionary created from the keyPressEvent
+        and it's corresponding keyMap json object
 
-        pos = self.__getPos()
-        if event[1]['Direction']['Up'] != 0:
-            self.editor.go_to_line(int(pos[0] + event[1]['Direction']['Up']))
-            curPos = self.__getPos()
+        @ret success: True if the cursor was successfully moved
 
-            while (curPos[1]) <= pos[1] and curPos[0] < pos[0]:
-                self.editor.set_cursor_position(self.editor.get_cursor_position() + 1)
-                curPos = self.__getPos()
-                pass
+        '''
 
-            self.editor.set_cursor_position(self.editor.get_cursor_position() - 1)
+        success = True
 
-        pass
-        #tab = self.editorService.get_actual_tab()
-        #cursor = tab.textCursor()
-        #cursor.beginEditBlock()
+        moveOperation = getattr(QTextCursor, event[1]['MoveOperation'], False)
+        if moveOperation is not False:
+            cursor = self.editor.textCursor()
+            cursor.movePosition(moveOperation, QTextCursor.MoveAnchor, event[1]['N'])
+            self.editor.setTextCursor(cursor)
 
-        #cursor.insertText(event[1]['Direction'])
+        else:
+            success = False
 
-        #cursor.endEditBlock()
+        return success
 
 # ==============================================================================
 # USELESS
@@ -229,3 +241,70 @@ class Vimja(plugin.Plugin):
 
 #cursor.insertText('hi')
 #cursor.endEditBlock()
+
+#self.editor.set_cursor_position(self.editor.get_cursor_position() +
+    #event[1]['Direction']['Right'])
+
+#pos = self.__getPos()
+#if event[1]['Direction']['Up'] != 0:
+    #self.editor.go_to_line(int(pos[0] + event[1]['Direction']['Up']))
+    #curPos = self.__getPos()
+
+    #while (curPos[1]) <= pos[1] and curPos[0] < pos[0]:
+        #self.editor.set_cursor_position(self.editor.get_cursor_position() + 1)
+        #curPos = self.__getPos()
+        #pass
+
+    #self.editor.set_cursor_position(self.editor.get_cursor_position() - 1)
+
+#self.emit(SIGNAL("cursorPositionChange(int, int)"), 109, 15)
+    #self.textCursor().blockNumber() + 1,
+    #self.textCursor().columnNumber())
+
+#cursor.insertText('\n{}\n'.format(cursor.position()))
+#cursor.setPosition(cursor.position())
+#cursor.insertText('\n{}\n'.format(cursor.position()))
+#cursor.insertText('done: {}'.format(x))
+
+##Return value
+#success = True
+
+##Extract the direction mapping
+#direction = event[1]['Direction']
+
+##Get the current line column values
+#curPos = self.__getPos()
+
+##Calculate the desired line column values
+#newPos = (curPos[0] + direction['Up'], curPos[1] + direction['Right'])
+
+##Determine the direction the cursor must move; it must be incremented to move
+##down or right and decremented for up or left.
+##The values Up and Right for now will only be 1, 0 or -1 and only one of them
+##will be non-zero at a time thus giving cursorPosDiff a value of either 1 or -1
+#cursorPosDiff = direction['Up'] + direction['Right']
+
+##If we need to move down or right
+#if cursorPosDiff > 0:
+    ##Continue incrementing the cursor position while the line or the column is
+    ##less than their desired values
+    #while curPos[0] < newPos[0] or curPos[1] < newPos[1]:
+        #self.editor.set_cursor_position(self.editor.get_cursor_position() + 1)
+        #curPos = self.__getPos()
+
+##If we need to move up or left
+#elif cursorPosDiff < 0:
+    ##Continue decrementing the cursor position while the line or column is greater
+    ##than their desired values
+    #while curPos[0] > newPos[0] or curPos[1] > newPos[1]:
+        #self.editor.set_cursor_position(self.editor.get_cursor_position() - 1)
+        #curPos = self.__getPos()
+
+##If we don't need to move then the json has an error
+#else:
+    #success = False
+
+#return success
+
+#logger.warning('direction: {}'.format(direction))
+#logger.warning('curPos1: {}'.format(self.__getPos()))
