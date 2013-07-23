@@ -38,18 +38,36 @@ class Vimja(plugin.Plugin):
     # ==============================================================================
 
     def __isNum(self, str):
-        ret = True
-        for c in str:
-            ret &= c.isdigit() or c == '.' or c == '-' or c == '+'
+        ''' Checks to see if a given string is a valid number.
 
-        return ret
+        @arg str(str): A string to be checked as a potential number
+
+        @ret bool(isNum): True if the string is a number, False otherwise.
+            Accepts strings of the format: [+-]\d*(\.){1}\d*
+
+        '''
+
+        isNum = True
+        for c in str:
+            isNum &= c.isdigit() or c == '.' or c == '-' or c == '+'
+
+        return isNum
 
     def __getKeyMap(self, path):
-        ''' Gets the key map from the given json file '''
+        ''' Gets the key map from the given json file
+
+        @arg filePath(path): Path to keyMap.json
+
+        '''
 
         return self.__convertCollection(json_manager.read_json(path))
 
     def __getPos(self):
+        ''' Get the line and column number of the cursor.
+
+        @ret tuple(line, col): A two element tuple containing the line and column numbers
+
+        '''
         line = self.editor.textCursor().blockNumber()
         col = self.editor.textCursor().columnNumber()
 
@@ -58,7 +76,12 @@ class Vimja(plugin.Plugin):
     #TODO: Clean this logic to remove multiple returns and have only getattr call
     def __convertCollection(self, data):
         ''' Converts a collection recursively, turning all unicode strings into
-        either strings or ints
+        either strings, ints or attributes of the Vimja class.
+
+        @arg data: A variable who's contents are to be converted from unicode
+
+        @ret data: The initial variable except the contents have now been changed from
+            unicode to any of the above mentioned types.
 
         '''
 
@@ -131,6 +154,11 @@ class Vimja(plugin.Plugin):
         said events depending on whether or not the user is in normal mode or
         insert mode
 
+        @arg function: The default event handler.
+
+        @ret func(intercepKeyEvent): A key event interceptor, decides what to do with
+            each key press.
+
         '''
 
         def interceptKeyEvent(event):
@@ -159,7 +187,7 @@ class Vimja(plugin.Plugin):
         @arg event: KeyPressEvent that is used to determine the appropriate handler
 
         @ret success: Returns the exit status of the event handler (True or False) or
-        it returns None if no handler was found
+            it returns None if no handler was found
 
         '''
 
@@ -179,10 +207,13 @@ class Vimja(plugin.Plugin):
 # ==============================================================================
 
     #TODO: Implement the buffer clearing functionality of Escape
+    #TODO: Remove the residual cursor size that occurs when changing from insert
+        #to command mode
     def switchMode(self, event):
         ''' Changes the mode of the editor
+
         @arg event: tuple containing a mode dictionary created from the keyPressEvent and
-        it's corresponding keyMap json object
+            it's corresponding keyMap json object
 
         @ret success: returns True
         '''
@@ -194,12 +225,11 @@ class Vimja(plugin.Plugin):
 
     #TODO: Change the jump to head of document from S to gg to meet vim defaults
     #TODO: Change the jump to bottom to be G as opposed to non-case sensitive
-    #FIXME: After moving in any non up/down direction any subsequent up down movement
-    #    jumps the cursor to the start of the line
     def move(self, event):
         ''' Moves the cursor
+
         @arg event: tuple containing a movement dictionary created from the keyPressEvent
-        and it's corresponding keyMap json object
+            and it's corresponding keyMap json object
 
         @ret success: True if the cursor was successfully moved
 
@@ -308,3 +338,10 @@ class Vimja(plugin.Plugin):
 
 #logger.warning('direction: {}'.format(direction))
 #logger.warning('curPos1: {}'.format(self.__getPos()))
+
+#cursor = self.editor.textCursor()
+#cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+#cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+#e = self._main.get_actual_editor()
+#e.cut()
+#return True
