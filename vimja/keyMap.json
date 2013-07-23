@@ -37,6 +37,12 @@
         "Key": "L"
     },
 
+    "83": {
+        "Function": "move",
+        "MoveOperation": "Start",
+        "N": "1",
+        "Key": "S"
+    },
     "48": {
         "Function": "move",
         "MoveOperation": "StartOfLine",
@@ -60,13 +66,6 @@
         "MoveOperation": "EndOfLine",
         "N": "1",
         "Key": "$"
-    },
-
-    "83": {
-        "Function": "move",
-        "MoveOperation": "Start",
-        "N": "1",
-        "Key": "S"
     },
     "71": {
         "Function": "move",
