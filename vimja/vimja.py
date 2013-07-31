@@ -68,6 +68,7 @@ class Vimja(plugin.Plugin):
         @ret tuple(line, col): A two element tuple containing the line and column numbers
 
         '''
+
         line = self.editor.textCursor().blockNumber()
         col = self.editor.textCursor().columnNumber()
 
@@ -78,10 +79,10 @@ class Vimja(plugin.Plugin):
         ''' Converts a collection recursively, turning all unicode strings into
         either strings, ints or attributes of the Vimja class.
 
-        @arg data: A variable who's contents are to be converted from unicode
+        @arg type(data): A variable who's contents are to be converted from unicode
 
-        @ret data: The initial variable except the contents have now been changed from
-            unicode to any of the above mentioned types.
+        @ret type(data): The initial variable except the contents have now been changed
+            from unicode to any of the above mentioned types.
 
         '''
 
@@ -146,8 +147,8 @@ class Vimja(plugin.Plugin):
 # ==============================================================================
 
     #TODO: Remove determineEventHandler, make one function. The issue is that
-    #    said function needs to accept one argument but still needs access to the rest
-    #    of the Vimja class
+        #said function needs to accept one argument but still needs access to the rest
+        #of the Vimja class
     #TODO: Generalize interceptor to take in various events
     def getKeyEventInterceptor(self, function):
         ''' Returns a key event interceptor that determines how to handle
@@ -215,7 +216,8 @@ class Vimja(plugin.Plugin):
         @arg event: tuple containing a mode dictionary created from the keyPressEvent and
             it's corresponding keyMap json object
 
-        @ret success: returns True
+        @ret bool(success): returns True
+
         '''
 
         self.mode = event[1]['Mode']
@@ -231,7 +233,7 @@ class Vimja(plugin.Plugin):
         @arg event: tuple containing a movement dictionary created from the keyPressEvent
             and it's corresponding keyMap json object
 
-        @ret success: True if the cursor was successfully moved
+        @ret bool(success): True if the cursor was successfully moved
 
         '''
 
