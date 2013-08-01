@@ -37,7 +37,7 @@ class Vimja(plugin.Plugin):
     # PRIVATE HELPERS
     # ==============================================================================
 
-    def __isNum(self, str):
+    def isNum(self, str):
         ''' Checks to see if a given string is a valid number.
 
         @arg str(str): A string to be checked as a potential number
@@ -53,36 +53,35 @@ class Vimja(plugin.Plugin):
 
         return isNum
 
-    def __getKeyMap(self, path):
+    def getKeyMap(self, path):
         ''' Gets the key map from the given json file
 
         @arg filePath(path): Path to keyMap.json
 
         '''
 
-        return self.__convertCollection(json_manager.read_json(path))
+        return self.convertCollection(json_manager.read_json(path))
 
-    def __getPos(self):
+    def getPos(self):
         ''' Get the line and column number of the cursor.
 
         @ret tuple(line, col): A two element tuple containing the line and column numbers
 
         '''
-
         line = self.editor.textCursor().blockNumber()
         col = self.editor.textCursor().columnNumber()
 
         return (line, col)
 
     #TODO: Clean this logic to remove multiple returns and have only getattr call
-    def __convertCollection(self, data):
+    def convertCollection(self, data):
         ''' Converts a collection recursively, turning all unicode strings into
         either strings, ints or attributes of the Vimja class.
 
-        @arg type(data): A variable who's contents are to be converted from unicode
+        @arg data: A variable who's contents are to be converted from unicode
 
-        @ret type(data): The initial variable except the contents have now been changed
-            from unicode to any of the above mentioned types.
+        @ret data: The initial variable except the contents have now been changed from
+            unicode to any of the above mentioned types.
 
         '''
 
@@ -93,7 +92,7 @@ class Vimja(plugin.Plugin):
                 return getattr(self, data, False)
 
             #If the data is a number return it as such
-            if self.__isNum(data):
+            if self.isNum(data):
                 return float(data)
 
             #Else return it as a standard string
@@ -103,12 +102,12 @@ class Vimja(plugin.Plugin):
         #If we have a dictionary
         elif isinstance(data, Mapping):
             #Iterate through the items of said dictionary
-            return dict(map(self.__convertCollection, data.iteritems()))
+            return dict(map(self.convertCollection, data.iteritems()))
 
         #If we have an iterable
         elif isinstance(data, Iterable):
             #Iterate through all of items in the iterable
-            return type(data)(map(self.__convertCollection, data))
+            return type(data)(map(self.convertCollection, data))
 
         else:
             return data
@@ -124,16 +123,16 @@ class Vimja(plugin.Plugin):
         '''
 
         #vim command mode
-        self.__NORMAL_MODE = 0
+        self.NORMAL_MODE = 0
 
         #text editor mode
-        self.__INSERT_MODE = 1
+        self.INSERT_MODE = 1
 
         #set the default mode to normal mode
-        self.mode = self.__INSERT_MODE
+        self.mode = self.INSERT_MODE
 
         #get the key map
-        self.keyMap = self.__getKeyMap(os.path.join(self._path, 'keyMap.json'))
+        self.keyMap = self.getKeyMap(os.path.join(self._path, 'keyMap.json'))
 
         self.editorService = self.locator.get_service('editor')
 
@@ -147,8 +146,8 @@ class Vimja(plugin.Plugin):
 # ==============================================================================
 
     #TODO: Remove determineEventHandler, make one function. The issue is that
-        #said function needs to accept one argument but still needs access to the rest
-        #of the Vimja class
+    #    said function needs to accept one argument but still needs access to the rest
+    #    of the Vimja class
     #TODO: Generalize interceptor to take in various events
     def getKeyEventInterceptor(self, function):
         ''' Returns a key event interceptor that determines how to handle
@@ -172,7 +171,7 @@ class Vimja(plugin.Plugin):
             #If the key was the escape key or the user is in normal mode take over the
             #event handling
             #TODO: Add in a check for user defined key bindings
-            if event.key() == Qt.Key_Escape or self.mode == self.__NORMAL_MODE:
+            if event.key() == Qt.Key_Escape or self.mode == self.NORMAL_MODE:
                 self.keyEventMapper(event)
 
                 return
@@ -216,8 +215,7 @@ class Vimja(plugin.Plugin):
         @arg event: tuple containing a mode dictionary created from the keyPressEvent and
             it's corresponding keyMap json object
 
-        @ret bool(success): returns True
-
+        @ret success: returns True
         '''
 
         self.mode = event[1]['Mode']
@@ -233,7 +231,7 @@ class Vimja(plugin.Plugin):
         @arg event: tuple containing a movement dictionary created from the keyPressEvent
             and it's corresponding keyMap json object
 
-        @ret bool(success): True if the cursor was successfully moved
+        @ret success: True if the cursor was successfully moved
 
         '''
 
@@ -277,14 +275,14 @@ class Vimja(plugin.Plugin):
 #self.editor.set_cursor_position(self.editor.get_cursor_position() +
     #event[1]['Direction']['Right'])
 
-#pos = self.__getPos()
+#pos = self.getPos()
 #if event[1]['Direction']['Up'] != 0:
     #self.editor.go_to_line(int(pos[0] + event[1]['Direction']['Up']))
-    #curPos = self.__getPos()
+    #curPos = self.getPos()
 
     #while (curPos[1]) <= pos[1] and curPos[0] < pos[0]:
         #self.editor.set_cursor_position(self.editor.get_cursor_position() + 1)
-        #curPos = self.__getPos()
+        #curPos = self.getPos()
         #pass
 
     #self.editor.set_cursor_position(self.editor.get_cursor_position() - 1)
@@ -305,7 +303,7 @@ class Vimja(plugin.Plugin):
 #direction = event[1]['Direction']
 
 ##Get the current line column values
-#curPos = self.__getPos()
+#curPos = self.getPos()
 
 ##Calculate the desired line column values
 #newPos = (curPos[0] + direction['Up'], curPos[1] + direction['Right'])
@@ -322,7 +320,7 @@ class Vimja(plugin.Plugin):
     ##less than their desired values
     #while curPos[0] < newPos[0] or curPos[1] < newPos[1]:
         #self.editor.set_cursor_position(self.editor.get_cursor_position() + 1)
-        #curPos = self.__getPos()
+        #curPos = self.getPos()
 
 ##If we need to move up or left
 #elif cursorPosDiff < 0:
@@ -330,7 +328,7 @@ class Vimja(plugin.Plugin):
     ##than their desired values
     #while curPos[0] > newPos[0] or curPos[1] > newPos[1]:
         #self.editor.set_cursor_position(self.editor.get_cursor_position() - 1)
-        #curPos = self.__getPos()
+        #curPos = self.getPos()
 
 ##If we don't need to move then the json has an error
 #else:
@@ -339,7 +337,7 @@ class Vimja(plugin.Plugin):
 #return success
 
 #logger.warning('direction: {}'.format(direction))
-#logger.warning('curPos1: {}'.format(self.__getPos()))
+#logger.warning('curPos1: {}'.format(self.getPos()))
 
 #cursor = self.editor.textCursor()
 #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)

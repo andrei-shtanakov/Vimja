@@ -1,13 +1,13 @@
 {
     "73": {
         "Function": "switchMode",
-        "Mode": "_Vimja__INSERT_MODE",
+        "Mode": "INSERT_MODE",
         "CursorWidth": "1",
         "Key": "I"
     },
     "16777216": {
         "Function": "switchMode",
-        "Mode": "_Vimja__NORMAL_MODE",
+        "Mode": "NORMAL_MODE",
         "CursorWidth": "10",
         "Key": "Escape"
     },
