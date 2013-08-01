@@ -37,31 +37,6 @@ class Vimja(plugin.Plugin):
     # PRIVATE HELPERS
     # ==============================================================================
 
-    def isNum(self, str):
-        ''' Checks to see if a given string is a valid number.
-
-        @arg str(str): A string to be checked as a potential number
-
-        @ret bool(isNum): True if the string is a number, False otherwise.
-            Accepts strings of the format: [+-]\d*(\.){1}\d*
-
-        '''
-
-        isNum = True
-        for c in str:
-            isNum &= c.isdigit() or c == '.' or c == '-' or c == '+'
-
-        return isNum
-
-    def getKeyMap(self, path):
-        ''' Gets the key map from the given json file
-
-        @arg filePath(path): Path to keyMap.json
-
-        '''
-
-        return self.convertCollection(json_manager.read_json(path))
-
     def getPos(self):
         ''' Get the line and column number of the cursor.
 
@@ -72,6 +47,15 @@ class Vimja(plugin.Plugin):
         col = self.editor.textCursor().columnNumber()
 
         return (line, col)
+
+    def getKeyMap(self, path):
+        ''' Gets the key map from the given json file
+
+        @arg filePath(path): Path to keyMap.json
+
+        '''
+
+        return self.convertCollection(json_manager.read_json(path))
 
     #TODO: Clean this logic to remove multiple returns and have only getattr call
     def convertCollection(self, data):
@@ -112,6 +96,36 @@ class Vimja(plugin.Plugin):
         else:
             return data
 
+    def isNum(self, str):
+        ''' Checks to see if a given string is a valid number.
+
+        @arg str(str): A string to be checked as a potential number
+
+        @ret bool(isNum): True if the string is a number, False otherwise.
+            Accepts strings of the format: [+-]\d*(\.){1}\d*
+
+        '''
+
+        isNum = True
+        for c in str:
+            isNum &= c.isdigit() or c == '.' or c == '-' or c == '+'
+
+        return isNum
+
+    def appendDelimitedStr(self, newVal, string, resetVal, delimiter):
+        logger.warning('newVal: {0}; string{1}; resetVal: {2}; delimiter: {3}'.format(
+            newVal, string, resetVal, delimiter))
+
+        if newVal == resetVal or string == '':
+            logger.warning('in if')
+            string = newVal
+        else:
+            logger.warning('in else')
+            string += '{0} {1}'.format(delimiter, newVal)
+
+        logger.warning('string: {}'.format(string))
+        return string
+
 # ==============================================================================
 # PLUGIN INIT
 # ==============================================================================
@@ -133,6 +147,8 @@ class Vimja(plugin.Plugin):
 
         #get the key map
         self.keyMap = self.getKeyMap(os.path.join(self._path, 'keyMap.json'))
+
+        self.keyPressHist = ''
 
         self.editorService = self.locator.get_service('editor')
 
@@ -192,6 +208,10 @@ class Vimja(plugin.Plugin):
         '''
 
         key = event.key()
+        self.keyPressHist = self.appendDelimitedStr(key, self.keyPressHist,
+            Qt.Key_Escape, ',')
+
+        logger.warning('keyPressHist: {}'.format(self.keyPressHist))
         customKeyEvent = (key, self.keyMap.get(key, False))
 
         if customKeyEvent[1] and callable(customKeyEvent[1]['Function']):
