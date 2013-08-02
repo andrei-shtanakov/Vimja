@@ -200,7 +200,7 @@ class Vimja(plugin.Plugin):
             #If the key was the escape key or the user is in normal mode take over the
             #event handling
             #TODO: Add in a check for user defined key bindings
-            if event.key() == Qt.Key_Escape or self.mode == self.NORMAL_MODE:
+            if event.key() == Qt.Key_Escape or self.mode != self.INSERT_MODE:
                 self.keyEventMapper(event)
 
                 return
@@ -239,7 +239,6 @@ class Vimja(plugin.Plugin):
 # CUSTOM EVENT HANDLERS
 # ==============================================================================
 
-    #TODO: Implement the buffer clearing functionality of Escape
     #TODO: Remove the residual cursor size that occurs when changing from insert
         #to command mode
     def switchMode(self, event):
@@ -257,8 +256,6 @@ class Vimja(plugin.Plugin):
 
         return True
 
-    #TODO: Change the jump to head of document from S to gg to meet vim defaults
-    #TODO: Change the jump to bottom to be G as opposed to non-case sensitive
     def move(self, event):
         ''' Moves the cursor
 
