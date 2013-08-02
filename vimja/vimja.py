@@ -138,8 +138,24 @@ class Vimja(plugin.Plugin):
         #text editor mode
         self.INSERT_MODE = 1
 
+        #cut text mode
+        self.DELETE_MODE = 2
+
+        #copy text mode
+        self.YANK_MODE = 3
+
+        #TODO: Get rid of "custom" constants, solution along the same lines as changing
+            #the indices of the keyMap from hard code to Qt values
+        self.MOVE_ANCHOR = QTextCursor.MoveAnchor
+
+        self.KEEP_ANCHOR = QTextCursor.KeepAnchor
+
         #set the default mode to normal mode
         self.mode = self.INSERT_MODE
+
+        #set the default cursor movement to MoveAnchor as opposed to KeepAnchor
+        #as when the IDE is in DELETE_MODE
+        self.defaultCursorMoveType = self.MOVE_ANCHOR
 
         #get the key map
         self.keyMap = self.getKeyMap(os.path.join(self._path, 'keyMap.json'))
@@ -236,6 +252,7 @@ class Vimja(plugin.Plugin):
         '''
 
         self.mode = event[0]['Mode']
+        self.defaultCursorMoveType = event[0]['Anchor']
         self.editor.setCursorWidth(event[0]['CursorWidth'])
 
         return True
@@ -257,13 +274,32 @@ class Vimja(plugin.Plugin):
         moveOperation = getattr(QTextCursor, event[0]['MoveOperation'], False)
         if moveOperation is not False:
             cursor = self.editor.textCursor()
-            cursor.movePosition(moveOperation, QTextCursor.MoveAnchor, event[0]['N'])
+            cursor.movePosition(moveOperation, self.defaultCursorMoveType, event[0]['N'])
             self.editor.setTextCursor(cursor)
 
         else:
             success = False
 
         return success
+
+    def deleteChars(self, event):
+        cursor = self.editorService.get_actual_tab().textCursor()
+        cursor.beginEditBlock()
+
+        event[0]['Selection'](cursor)
+
+        self.editor.setTextCursor(cursor)
+        self.editor.cut()
+
+        cursor.endEditBlock()
+
+    def selectLine(self, cursor):
+        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+
+    def selectChar(self, cursor):
+        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 
 # ==============================================================================
 # USELESS
@@ -282,6 +318,9 @@ class Vimja(plugin.Plugin):
 # Dev Example Code
 # ==============================================================================
 
+# ==============================================================================
+# INSERT INTO EDITOR
+# ==============================================================================
 #tab = self.editorService.get_actual_tab()
 #cursor = tab.textCursor()
 #cursor.beginEditBlock()
@@ -289,70 +328,9 @@ class Vimja(plugin.Plugin):
 #cursor.insertText('hi')
 #cursor.endEditBlock()
 
-#self.editor.set_cursor_position(self.editor.get_cursor_position() +
-    #event[1]['Direction']['Right'])
-
-#pos = self.getPos()
-#if event[1]['Direction']['Up'] != 0:
-    #self.editor.go_to_line(int(pos[0] + event[1]['Direction']['Up']))
-    #curPos = self.getPos()
-
-    #while (curPos[1]) <= pos[1] and curPos[0] < pos[0]:
-        #self.editor.set_cursor_position(self.editor.get_cursor_position() + 1)
-        #curPos = self.getPos()
-        #pass
-
-    #self.editor.set_cursor_position(self.editor.get_cursor_position() - 1)
-
-#self.emit(SIGNAL("cursorPositionChange(int, int)"), 109, 15)
-    #self.textCursor().blockNumber() + 1,
-    #self.textCursor().columnNumber())
-
-#cursor.insertText('\n{}\n'.format(cursor.position()))
-#cursor.setPosition(cursor.position())
-#cursor.insertText('\n{}\n'.format(cursor.position()))
-#cursor.insertText('done: {}'.format(x))
-
-##Return value
-#success = True
-
-##Extract the direction mapping
-#direction = event[1]['Direction']
-
-##Get the current line column values
-#curPos = self.getPos()
-
-##Calculate the desired line column values
-#newPos = (curPos[0] + direction['Up'], curPos[1] + direction['Right'])
-
-##Determine the direction the cursor must move; it must be incremented to move
-##down or right and decremented for up or left.
-##The values Up and Right for now will only be 1, 0 or -1 and only one of them
-##will be non-zero at a time thus giving cursorPosDiff a value of either 1 or -1
-#cursorPosDiff = direction['Up'] + direction['Right']
-
-##If we need to move down or right
-#if cursorPosDiff > 0:
-    ##Continue incrementing the cursor position while the line or the column is
-    ##less than their desired values
-    #while curPos[0] < newPos[0] or curPos[1] < newPos[1]:
-        #self.editor.set_cursor_position(self.editor.get_cursor_position() + 1)
-        #curPos = self.getPos()
-
-##If we need to move up or left
-#elif cursorPosDiff < 0:
-    ##Continue decrementing the cursor position while the line or column is greater
-    ##than their desired values
-    #while curPos[0] > newPos[0] or curPos[1] > newPos[1]:
-        #self.editor.set_cursor_position(self.editor.get_cursor_position() - 1)
-        #curPos = self.getPos()
-
-##If we don't need to move then the json has an error
-#else:
-    #success = False
-
-#return success
-
+# ==============================================================================
+# LOGGER
+# ==============================================================================
 #logger.warning('direction: {}'.format(direction))
 #logger.warning('curPos1: {}'.format(self.getPos()))
 
@@ -362,3 +340,11 @@ class Vimja(plugin.Plugin):
 #e = self._main.get_actual_editor()
 #e.cut()
 #return True
+
+# ==============================================================================
+# DELETE A LINE
+# ==============================================================================
+#cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+#cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+#cursor.removeSelectedText()
+#cursor.deleteChar()

@@ -2,14 +2,30 @@
     "73": {
         "Function": "switchMode",
         "Mode": "INSERT_MODE",
+        "Anchor": "MOVE_ANCHOR",
         "CursorWidth": "1",
         "Key": "i"
     },
     "16777216": {
         "Function": "switchMode",
         "Mode": "NORMAL_MODE",
+        "Anchor": "MOVE_ANCHOR",
         "CursorWidth": "8",
         "Key": "Escape"
+    },
+    "68": {
+        "Function": "switchMode",
+        "Mode": "DELETE_MODE",
+        "Anchor": "KEEP_ANCHOR",
+        "CursorWidth": "1",
+        "Key": "d"
+    },
+    "89": {
+        "Function": "switchMode",
+        "Mode": "YANK_MODE",
+        "Anchor": "KEEP_ANCHOR",
+        "CursorWidth": "1",
+        "Key": "d"
     },
 
     "72": {
@@ -72,6 +88,17 @@
         "MoveOperation": "End",
         "N": "1",
         "Key": "G"
+    },
+
+    "88": {
+        "Function": "deleteChars",
+        "Selection": "selectChar",
+        "Key": "x"
+    },
+    "68,68": {
+        "Function": "deleteChars",
+        "Selection": "selectLine",
+        "Key": "dd"
     }
 
 }
