@@ -1,1 +1,2 @@
 Add the 'o' functionality: self.editor.insert_new_line() followed by a change to insert mode
+Change the keyMap json indices to be the Qt values as opposed to the hard coded versions

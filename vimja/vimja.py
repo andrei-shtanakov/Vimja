@@ -96,10 +96,10 @@ class Vimja(plugin.Plugin):
         else:
             return data
 
-    def isNum(self, str):
+    def isNum(self, string):
         ''' Checks to see if a given string is a valid number.
 
-        @arg str(str): A string to be checked as a potential number
+        @arg str(string): A string to be checked as a potential number
 
         @ret bool(isNum): True if the string is a number, False otherwise.
             Accepts strings of the format: [+-]\d*(\.){1}\d*
@@ -107,18 +107,19 @@ class Vimja(plugin.Plugin):
         '''
 
         isNum = True
-        for c in str:
+        for c in string:
             isNum &= c.isdigit() or c == '.' or c == '-' or c == '+'
 
         return isNum
 
+    #TODO: Don't flip flop between integer and string
     def appendDelimitedStr(self, newVal, string, resetVal, delimiter):
         if newVal == resetVal or string == '':
-            string = '{0}'.format(newVal)
+            string = newVal
         else:
-            string += '{0} {1}'.format(delimiter, newVal)
+            string = '{0}{1}{2}'.format(string, delimiter, newVal)
 
-        logger.warning('string: {}'.format(string))
+        logger.warning('string: {0}'.format(string))
         return string
 
 # ==============================================================================
@@ -142,6 +143,7 @@ class Vimja(plugin.Plugin):
 
         #get the key map
         self.keyMap = self.getKeyMap(os.path.join(self._path, 'keyMap.json'))
+        logger.warning('keyMap: {}'.format(self.keyMap))
 
         self.keyPressHist = ''
 
@@ -206,7 +208,7 @@ class Vimja(plugin.Plugin):
         self.keyPressHist = self.appendDelimitedStr(key, self.keyPressHist,
             Qt.Key_Escape, ',')
 
-        customKeyEvent = (self.keyMap.get(key, False), key)
+        customKeyEvent = (self.keyMap.get(self.keyPressHist, False), key)
 
         if customKeyEvent[0] and callable(customKeyEvent[0]['Function']):
             success = customKeyEvent[0]['Function'](customKeyEvent)

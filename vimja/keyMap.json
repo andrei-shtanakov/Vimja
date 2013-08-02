@@ -3,7 +3,7 @@
         "Function": "switchMode",
         "Mode": "INSERT_MODE",
         "CursorWidth": "1",
-        "Key": "I"
+        "Key": "i"
     },
     "16777216": {
         "Function": "switchMode",
@@ -16,32 +16,32 @@
         "Function": "move",
         "MoveOperation": "Left",
         "N": "1",
-        "Key": "H"
+        "Key": "h"
     },
     "74": {
         "Function": "move",
         "MoveOperation": "Down",
         "N": "1",
-        "Key": "J"
+        "Key": "j"
     },
     "75": {
         "Function": "move",
         "MoveOperation": "Up",
         "N": "1",
-        "Key": "K"
+        "Key": "k"
     },
     "76": {
         "Function": "move",
         "MoveOperation": "Right",
         "N": "1",
-        "Key": "L"
+        "Key": "l"
     },
 
-    "83": {
+    "71,71": {
         "Function": "move",
         "MoveOperation": "Start",
         "N": "1",
-        "Key": "S"
+        "Key": "gg"
     },
     "48": {
         "Function": "move",
@@ -53,13 +53,13 @@
         "Function": "move",
         "MoveOperation": "PreviousWord",
         "N": "1",
-        "Key": "B"
+        "Key": "b"
     },
     "87": {
         "Function": "move",
         "MoveOperation": "NextWord",
         "N": "1",
-        "Key": "W"
+        "Key": "w"
     },
     "36": {
         "Function": "move",
@@ -67,7 +67,7 @@
         "N": "1",
         "Key": "$"
     },
-    "71": {
+    "16777248,71": {
         "Function": "move",
         "MoveOperation": "End",
         "N": "1",
