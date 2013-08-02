@@ -113,14 +113,9 @@ class Vimja(plugin.Plugin):
         return isNum
 
     def appendDelimitedStr(self, newVal, string, resetVal, delimiter):
-        logger.warning('newVal: {0}; string{1}; resetVal: {2}; delimiter: {3}'.format(
-            newVal, string, resetVal, delimiter))
-
         if newVal == resetVal or string == '':
-            logger.warning('in if')
-            string = newVal
+            string = '{0}'.format(newVal)
         else:
-            logger.warning('in else')
             string += '{0} {1}'.format(delimiter, newVal)
 
         logger.warning('string: {}'.format(string))
@@ -211,11 +206,11 @@ class Vimja(plugin.Plugin):
         self.keyPressHist = self.appendDelimitedStr(key, self.keyPressHist,
             Qt.Key_Escape, ',')
 
-        logger.warning('keyPressHist: {}'.format(self.keyPressHist))
-        customKeyEvent = (key, self.keyMap.get(key, False))
+        customKeyEvent = (self.keyMap.get(key, False), key)
 
-        if customKeyEvent[1] and callable(customKeyEvent[1]['Function']):
-            success = customKeyEvent[1]['Function'](customKeyEvent)
+        if customKeyEvent[0] and callable(customKeyEvent[0]['Function']):
+            success = customKeyEvent[0]['Function'](customKeyEvent)
+            self.keyPressHist = ''
 
         else:
             success = None
@@ -238,8 +233,8 @@ class Vimja(plugin.Plugin):
         @ret success: returns True
         '''
 
-        self.mode = event[1]['Mode']
-        self.editor.setCursorWidth(event[1]['CursorWidth'])
+        self.mode = event[0]['Mode']
+        self.editor.setCursorWidth(event[0]['CursorWidth'])
 
         return True
 
@@ -257,10 +252,10 @@ class Vimja(plugin.Plugin):
 
         success = True
 
-        moveOperation = getattr(QTextCursor, event[1]['MoveOperation'], False)
+        moveOperation = getattr(QTextCursor, event[0]['MoveOperation'], False)
         if moveOperation is not False:
             cursor = self.editor.textCursor()
-            cursor.movePosition(moveOperation, QTextCursor.MoveAnchor, event[1]['N'])
+            cursor.movePosition(moveOperation, QTextCursor.MoveAnchor, event[0]['N'])
             self.editor.setTextCursor(cursor)
 
         else:

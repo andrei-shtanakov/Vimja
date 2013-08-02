@@ -8,7 +8,7 @@
     "16777216": {
         "Function": "switchMode",
         "Mode": "NORMAL_MODE",
-        "CursorWidth": "10",
+        "CursorWidth": "8",
         "Key": "Escape"
     },
 
