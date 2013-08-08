@@ -161,10 +161,14 @@ class Vimja(plugin.Plugin):
         self.keyMap = self.getKeyMap(os.path.join(self._path, 'keyMap.json'))
         logger.warning('keyMap: {}'.format(self.keyMap))
 
-        self.keyPressHist = ''
+        #buffer used to hold all of the key presses between valid commands or until
+        #the escape key is pressed
+        self.keyPressBuffer = ''
 
+        #get the editor service
         self.editorService = self.locator.get_service('editor')
 
+        #get the actual editor
         self.editor = self.editorService.get_editor()
 
         #set the editor's key press event handler to the interceptor
@@ -175,8 +179,8 @@ class Vimja(plugin.Plugin):
 # ==============================================================================
 
     #TODO: Remove determineEventHandler, make one function. The issue is that
-    #    said function needs to accept one argument but still needs access to the rest
-    #    of the Vimja class
+        #said function needs to accept one argument but still needs access to the rest
+        #of the Vimja class
     #TODO: Generalize interceptor to take in various events
     def getKeyEventInterceptor(self, function):
         ''' Returns a key event interceptor that determines how to handle
@@ -199,7 +203,7 @@ class Vimja(plugin.Plugin):
 
             #If the key was the escape key or the user is in normal mode take over the
             #event handling
-            #TODO: Add in a check for user defined key bindings
+            #TODO: Add in a check for user defined key binding exceptions
             if event.key() == Qt.Key_Escape or self.mode != self.INSERT_MODE:
                 self.keyEventMapper(event)
 
@@ -221,14 +225,14 @@ class Vimja(plugin.Plugin):
         '''
 
         key = event.key()
-        self.keyPressHist = self.appendDelimitedStr(key, self.keyPressHist,
+        self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
             Qt.Key_Escape, ',')
 
-        customKeyEvent = (self.keyMap.get(self.keyPressHist, False), key)
+        customKeyEvent = (self.keyMap.get(self.keyPressBuffer, False), key)
 
         if customKeyEvent[0] and callable(customKeyEvent[0]['Function']):
             success = customKeyEvent[0]['Function'](customKeyEvent)
-            self.keyPressHist = ''
+            self.keyPressBuffer = ''
 
         else:
             success = None
@@ -248,6 +252,7 @@ class Vimja(plugin.Plugin):
             it's corresponding keyMap json object
 
         @ret success: returns True
+
         '''
 
         self.mode = event[0]['Mode']
