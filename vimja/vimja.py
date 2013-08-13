@@ -15,6 +15,8 @@ from PyQt4.QtGui import QTextCursor
 from PyQt4.QtGui import QPlainTextEdit
 from PyQt4.QtCore import SIGNAL
 
+import re
+
 #TODO: Remove as it is debug info
 import logging
 logging.basicConfig(filename='vimja.log', level=logging.DEBUG)
@@ -144,6 +146,10 @@ class Vimja(plugin.Plugin):
         #copy text mode
         self.YANK_MODE = 3
 
+        self.isSearching = True
+
+        self.regexString = ''
+
         #TODO: Get rid of "custom" constants, solution along the same lines as changing
             #the indices of the keyMap from hard code to Qt values
         self.MOVE_ANCHOR = QTextCursor.MoveAnchor
@@ -205,7 +211,7 @@ class Vimja(plugin.Plugin):
             #event handling
             #TODO: Add in a check for user defined key binding exceptions
             if event.key() == Qt.Key_Escape or self.mode != self.INSERT_MODE:
-                self.keyEventMapper(event)
+                self.keyEventMapper(event.key())
 
                 return
 
@@ -213,7 +219,7 @@ class Vimja(plugin.Plugin):
             return function(event)
         return interceptKeyEvent
 
-    def keyEventMapper(self, event):
+    def keyEventMapper(self, key):
         ''' Takes in the key event and determines what function should be called
         in order to handle said event.
 
@@ -224,7 +230,10 @@ class Vimja(plugin.Plugin):
 
         '''
 
-        key = event.key()
+        if self.isSearching and self.mode == self.NORMAL_MODE:
+            self.searchDocument(key)
+            return None
+
         self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
             Qt.Key_Escape, ',')
 
@@ -242,6 +251,24 @@ class Vimja(plugin.Plugin):
 # ==============================================================================
 # CUSTOM EVENT HANDLERS
 # ==============================================================================
+
+    #TODO: Implement search highlighting
+    def searchDocument(self, key):
+        if key == Qt.Key_Enter:
+            self.isSearching = False
+            pass
+
+        elif key == Qt.Key_Backspace:
+            self.regexString = self.regexString[:-1]
+
+        else:
+            self.regexString += chr(key)
+
+            docText = self.editor.get_text().upper()
+            word = re.search(self.regexString, docText)
+
+            self.editor.highlight_selected_word(word.string)
+            self.editor.set_cursor_position(word.start())
 
     #TODO: Remove the residual cursor size that occurs when changing from insert
         #to command mode
