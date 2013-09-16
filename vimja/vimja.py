@@ -210,16 +210,21 @@ class Vimja(plugin.Plugin):
             #If the key was the escape key or the user is in normal mode take over the
             #event handling
             #TODO: Add in a check for user defined key binding exceptions
-            if event.key() == Qt.Key_Escape or self.mode != self.INSERT_MODE:
-                self.keyEventMapper(event.key())
+            if event.key() == Qt.Key_Escape or self.mode == self.NORMAL_MODE:
+                self.normalKeyEventMapper(event.key())
+                return
 
+            elif self.mode == self.DELETE_MODE or self.mode == self.YANK_MODE:
+                self.bufferKeyEventMapper(event.key())
                 return
 
             #Otherwise allow the editor to handle said event in the default manner
             return function(event)
         return interceptKeyEvent
 
-    def keyEventMapper(self, key):
+    #TODO: work on consolidating the event mappers (there seems to be too much duplicate
+        #code for them to have to be separate
+    def normalKeyEventMapper(self, key):
         ''' Takes in the key event and determines what function should be called
         in order to handle said event.
 
@@ -229,10 +234,6 @@ class Vimja(plugin.Plugin):
             it returns None if no handler was found
 
         '''
-
-        if self.isSearching and self.mode == self.NORMAL_MODE:
-            self.searchDocument(key)
-            return None
 
         self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
             Qt.Key_Escape, ',')
@@ -248,9 +249,51 @@ class Vimja(plugin.Plugin):
 
         return success
 
+    def bufferKeyEventMapper(self, key):
+        self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
+            Qt.Key_Escape, ',')
+
+        bufferKeyEvent = (self.keyMap['BUFFER_COMMANDS'].get(
+            self.keyPressBuffer, False), key)
+
+        #if it's buffer specific functionality (ex: d or y)
+        if bufferKeyEvent[0] and callable(bufferKeyEvent[0]['Function']):
+            success = bufferKeyEvent[0]['Function'](bufferKeyEvent)
+            self.keyPressBuffer = ''
+            self.switchMode((self.keyMap[Qt.Key_Escape], Qt.Key_Escape))
+
+        else:
+            pass
+
+        return success
+
 # ==============================================================================
 # CUSTOM EVENT HANDLERS
 # ==============================================================================
+
+    def bufferChars(self, event):
+        logger.warning('in delete chars; event: {}'.format(event))
+        cursor = self.editorService.get_actual_tab().textCursor()
+        cursor.beginEditBlock()
+
+        event[0]['Selection'](cursor)
+
+        self.editor.setTextCursor(cursor)
+        if self.mode == self.DELETE_MODE or event[1] == Qt.Key_X:
+            self.editor.cut()
+
+        elif self.mode == self.YANK_MODE:
+            self.editor.copy()
+
+        cursor.endEditBlock()
+
+    def selectLine(self, cursor):
+        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+
+    def selectChar(self, cursor):
+        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 
     #TODO: Implement search highlighting
     def searchDocument(self, key):
@@ -310,25 +353,6 @@ class Vimja(plugin.Plugin):
             success = False
 
         return success
-
-    def deleteChars(self, event):
-        cursor = self.editorService.get_actual_tab().textCursor()
-        cursor.beginEditBlock()
-
-        event[0]['Selection'](cursor)
-
-        self.editor.setTextCursor(cursor)
-        self.editor.cut()
-
-        cursor.endEditBlock()
-
-    def selectLine(self, cursor):
-        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
-
-    def selectChar(self, cursor):
-        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 
 # ==============================================================================
 # USELESS

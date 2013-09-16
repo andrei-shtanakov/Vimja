@@ -91,14 +91,22 @@
     },
 
     "88": {
-        "Function": "deleteChars",
+        "Function": "bufferChars",
         "Selection": "selectChar",
         "Key": "x"
     },
-    "68,68": {
-        "Function": "deleteChars",
-        "Selection": "selectLine",
-        "Key": "dd"
+
+    "BUFFER_COMMANDS": {
+        "68": {
+            "Function": "bufferChars",
+            "Selection": "selectLine",
+            "Key": "d"
+        },
+        "89": {
+            "Function": "bufferChars",
+            "Selection": "selectLine",
+            "Key": "y"
+        }
     }
 
 }
