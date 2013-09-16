@@ -174,15 +174,28 @@ class Vimja(plugin.Plugin):
         #get the editor service
         self.editorService = self.locator.get_service('editor')
 
-        #get the actual editor
-        self.editor = self.editorService.get_editor()
+        #initialize the editor to None
+        self.editor = None
 
-        #set the editor's key press event handler to the interceptor
-        self.editor.keyPressEvent = self.getKeyEventInterceptor(self.editor.keyPressEvent)
+        #TODO: find a better way to intercept the events
+        #hack to get around the fact that there is no editor when the plugin is being
+        #initialized, this makes the first key press event connect the editor's event
+        #handler to vimja
+        self.editorService.editorKeyPressEvent.connect(self.connectKeyPressHandler)
 
 # ==============================================================================
 # EVENT HANDLING
 # ==============================================================================
+
+    def connectKeyPressHandler(self):
+        #if there is no editor then we haven't captured the key events yet
+        if self.editor is None:
+            #get the actual editor
+            self.editor = self.editorService.get_editor()
+
+            #set the editor's key press event handler to the interceptor
+            self.editor.keyPressEvent = self.getKeyEventInterceptor(
+                self.editor.keyPressEvent)
 
     #TODO: Remove determineEventHandler, make one function. The issue is that
         #said function needs to accept one argument but still needs access to the rest
