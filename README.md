@@ -1,8 +1,8 @@
-Vimja:
-======
-A vim plugin for the Ninja-IDE (beta)
+Vimja: A vim plugin for the Ninja-IDE (beta)
+============================================
 
 Features:
+
     Movement:
         j - down
         k - up
