@@ -271,6 +271,7 @@ class Vimja(plugin.Plugin):
 # CUSTOM EVENT HANDLERS
 # ==============================================================================
 
+    #TODO: use custom buffer instead of OS copy/paste buffer
     def bufferChars(self, event):
         logger.warning('in delete chars; event: {}'.format(event))
         cursor = self.editorService.get_actual_tab().textCursor()
@@ -294,6 +295,10 @@ class Vimja(plugin.Plugin):
 
     def selectChar(self, cursor):
         cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+
+    def paste(self, event):
+        logger.warning('in paste')
+        self.editor.paste()
 
     #TODO: Implement search highlighting
     def searchDocument(self, key):

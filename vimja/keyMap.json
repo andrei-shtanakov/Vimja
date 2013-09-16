@@ -95,6 +95,10 @@
         "Selection": "selectChar",
         "Key": "x"
     },
+    "80": {
+        "Function": "paste",
+        "Key": "p"
+    },
 
     "BUFFER_COMMANDS": {
         "68": {
