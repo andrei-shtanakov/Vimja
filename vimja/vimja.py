@@ -188,6 +188,10 @@ class Vimja(plugin.Plugin):
 # ==============================================================================
 
     def connectKeyPressHandler(self):
+        ''' Connects Vimja's key event interceptor to the default key press events '''
+
+        logger.warning('connecting')
+
         #if there is no editor then we haven't captured the key events yet
         if self.editor is None:
             #get the actual editor
@@ -290,16 +294,24 @@ class Vimja(plugin.Plugin):
         cursor = self.editorService.get_actual_tab().textCursor()
         cursor.beginEditBlock()
 
-        event[0]['Selection'](cursor)
+        #event[0]['Selection'](cursor)
 
         self.editor.setTextCursor(cursor)
-        if self.mode == self.DELETE_MODE or event[1] == Qt.Key_X:
-            self.editor.cut()
 
-        elif self.mode == self.YANK_MODE:
-            self.editor.copy()
+        logger.warning('about to select')
+        cursor.select(QTextCursor.LineUnderCursor)
+        logger.warning('selected')
+        word = cursor.selectedText()
+        logger.warning('word: {}'.format(word))
+        cursor.removeSelectedText()
 
-        cursor.endEditBlock()
+        #if self.mode == self.DELETE_MODE or event[1] == Qt.Key_X:
+            #self.editor.cut()
+
+        #elif self.mode == self.YANK_MODE:
+            #self.editor.copy()
+
+        #cursor.endEditBlock()
 
     def selectLine(self, cursor):
         cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
