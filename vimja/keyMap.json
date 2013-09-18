@@ -92,7 +92,7 @@
 
     "88": {
         "Function": "bufferChars",
-        "Selection": "selectChar",
+        "MoveOperation": "selectChar",
         "Key": "x"
     },
     "80": {
@@ -103,12 +103,12 @@
     "BUFFER_COMMANDS": {
         "68": {
             "Function": "bufferChars",
-            "Selection": "selectLine",
+            "MoveOperation": "selectLine",
             "Key": "d"
         },
         "89": {
             "Function": "bufferChars",
-            "Selection": "selectLine",
+            "MoveOperation": "selectLine",
             "Key": "y"
         }
     }

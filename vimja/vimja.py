@@ -265,6 +265,7 @@ class Vimja(plugin.Plugin):
         customKeyEvent = (self.keyMap.get(self.keyPressBuffer, False), key)
 
         if customKeyEvent[0] and callable(customKeyEvent[0]['Function']):
+            logger.warning('valid command')
             success = customKeyEvent[0]['Function'](customKeyEvent)
             self.keyPressBuffer = ''
 
@@ -281,13 +282,13 @@ class Vimja(plugin.Plugin):
             self.keyPressBuffer, False), key)
 
         #if it's buffer specific functionality (ex: d or y)
+        if not bufferKeyEvent[0] or not callable(bufferKeyEvent[0]['Function']):
+            bufferKeyEvent = (self.keyMap.get(self.keyPressBuffer, False), key)
+
         if bufferKeyEvent[0] and callable(bufferKeyEvent[0]['Function']):
             success = bufferKeyEvent[0]['Function'](bufferKeyEvent)
             self.keyPressBuffer = ''
             self.switchMode((self.keyMap[Qt.Key_Escape], Qt.Key_Escape))
-
-        else:
-            pass
 
         return success
 
@@ -296,21 +297,35 @@ class Vimja(plugin.Plugin):
 # ==============================================================================
 
     def bufferChars(self, event, bufferName=0):
-        cursor = self.editorService.get_actual_tab().textCursor()
-        cursor.beginEditBlock()
+        try:
+            cursor = self.editorService.get_actual_tab().textCursor()
+            self.editor.setTextCursor(cursor)
+            cursor.beginEditBlock()
 
-        cursor.select(QTextCursor.LineUnderCursor)
-        self.copyPasteBuffer[bufferName]['text'] = cursor.selectedText()
-        self.copyPasteBuffer[bufferName]['isLine'] = True
+            event[0]['MoveOperation'](cursor)
 
-        logger.warning('text: {}'.format(self.copyPasteBuffer[bufferName]['text']))
-        logger.warning('isLine: {}'.format(self.copyPasteBuffer[bufferName]['isLine']))
+            self.copyPasteBuffer[bufferName]['text'] = cursor.selectedText()
+            self.copyPasteBuffer[bufferName]['isLine'] = True
 
-        if self.mode == self.DELETE_MODE or event[1] == Qt.Key_X:
-            cursor.removeSelectedText()
-            cursor.deleteChar()
+            logger.warning('text: {}'.format(self.copyPasteBuffer[bufferName]['text']))
+            logger.warning('isLine: {}'.format(
+                self.copyPasteBuffer[bufferName]['isLine']))
+
+            if self.mode == self.DELETE_MODE or event[1] == Qt.Key_X:
+                cursor.removeSelectedText()
+                cursor.deleteChar()
+
+        except Exception, e:
+            logger.warning('error: {}'.format(e.message))
 
         cursor.endEditBlock()
+
+    def selectLine(self, cursor):
+        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+
+    def selectChar(self, cursor):
+        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 
     def paste(self, event, bufferName=0):
         logger.warning('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
