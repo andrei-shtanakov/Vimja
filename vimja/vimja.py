@@ -28,6 +28,7 @@ logger.addHandler(hdlr)
 logger.setLevel(logging.WARNING)
 
 
+#TODO: Add better logging
 class Vimja(plugin.Plugin):
     ''' A vim plugin for the Ninja-IDE.
 
@@ -38,6 +39,10 @@ class Vimja(plugin.Plugin):
     # ==============================================================================
     # PRIVATE HELPERS
     # ==============================================================================
+
+    def addNewLine(self, cursor):
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.MoveAnchor)
+        self.editor.insert_new_line()
 
     def getPos(self):
         ''' Get the line and column number of the cursor.
@@ -146,7 +151,9 @@ class Vimja(plugin.Plugin):
         #copy text mode
         self.YANK_MODE = 3
 
-        self.isSearching = True
+        self.copyPasteBuffer = {0: {'text': '', 'isLine': False}}
+
+        self.isSearching = False
 
         self.regexString = ''
 
@@ -288,42 +295,36 @@ class Vimja(plugin.Plugin):
 # CUSTOM EVENT HANDLERS
 # ==============================================================================
 
-    #TODO: use custom buffer instead of OS copy/paste buffer
-    def bufferChars(self, event):
-        logger.warning('in delete chars; event: {}'.format(event))
+    def bufferChars(self, event, bufferName=0):
         cursor = self.editorService.get_actual_tab().textCursor()
         cursor.beginEditBlock()
 
-        #event[0]['Selection'](cursor)
-
-        self.editor.setTextCursor(cursor)
-
-        logger.warning('about to select')
         cursor.select(QTextCursor.LineUnderCursor)
-        logger.warning('selected')
-        word = cursor.selectedText()
-        logger.warning('word: {}'.format(word))
-        cursor.removeSelectedText()
+        self.copyPasteBuffer[bufferName]['text'] = cursor.selectedText()
+        self.copyPasteBuffer[bufferName]['isLine'] = True
 
-        #if self.mode == self.DELETE_MODE or event[1] == Qt.Key_X:
-            #self.editor.cut()
+        logger.warning('text: {}'.format(self.copyPasteBuffer[bufferName]['text']))
+        logger.warning('isLine: {}'.format(self.copyPasteBuffer[bufferName]['isLine']))
 
-        #elif self.mode == self.YANK_MODE:
-            #self.editor.copy()
+        if self.mode == self.DELETE_MODE or event[1] == Qt.Key_X:
+            cursor.removeSelectedText()
+            cursor.deleteChar()
 
-        #cursor.endEditBlock()
+        cursor.endEditBlock()
 
-    def selectLine(self, cursor):
-        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+    def paste(self, event, bufferName=0):
+        logger.warning('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
 
-    def selectChar(self, cursor):
-        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+        cursor = self.editorService.get_actual_tab().textCursor()
+        cursor.beginEditBlock()
 
-    def paste(self, event):
-        logger.warning('in paste')
-        self.editor.paste()
+        if self.copyPasteBuffer[bufferName]['isLine']:
+            self.addNewLine(cursor)
+            cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
+
+        cursor.insertText(self.copyPasteBuffer[bufferName]['text'])
+
+        cursor.endEditBlock()
 
     #TODO: Implement search highlighting
     def searchDocument(self, key):
@@ -374,9 +375,11 @@ class Vimja(plugin.Plugin):
         success = True
 
         moveOperation = getattr(QTextCursor, event[0]['MoveOperation'], False)
+
         if moveOperation is not False:
             cursor = self.editor.textCursor()
             cursor.movePosition(moveOperation, self.defaultCursorMoveType, event[0]['N'])
+
             self.editor.setTextCursor(cursor)
 
         else:
@@ -431,3 +434,15 @@ class Vimja(plugin.Plugin):
 #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
 #cursor.removeSelectedText()
 #cursor.deleteChar()
+
+# ==============================================================================
+# MOVING
+# ==============================================================================
+#def selectLine(self, cursor):
+    #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+    #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+    #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+
+#def selectChar(self, cursor):
+    #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+#
