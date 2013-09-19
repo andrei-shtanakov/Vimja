@@ -86,6 +86,10 @@ class Vimja(plugin.Plugin):
             if self.isNum(data):
                 return float(data)
 
+            #If the data is a boolean value return it as such
+            elif data == 'True' or data == 'False':
+                return True if data == 'True' else False
+
             #Else return it as a standard string
             else:
                 return str(data)
@@ -305,15 +309,18 @@ class Vimja(plugin.Plugin):
             event[0]['MoveOperation'](cursor)
 
             self.copyPasteBuffer[bufferName]['text'] = cursor.selectedText()
-            self.copyPasteBuffer[bufferName]['isLine'] = True
+            self.copyPasteBuffer[bufferName]['isLine'] = event[0]['isLine']
 
             logger.warning('text: {}'.format(self.copyPasteBuffer[bufferName]['text']))
             logger.warning('isLine: {}'.format(
                 self.copyPasteBuffer[bufferName]['isLine']))
 
-            if self.mode == self.DELETE_MODE or event[1] == Qt.Key_X:
+            if self.mode == self.DELETE_MODE:
                 cursor.removeSelectedText()
                 cursor.deleteChar()
+
+            elif event[1] == Qt.Key_X:
+                cursor.removeSelectedText()
 
         except Exception, e:
             logger.warning('error: {}'.format(e.message))
@@ -331,11 +338,20 @@ class Vimja(plugin.Plugin):
         logger.warning('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
 
         cursor = self.editorService.get_actual_tab().textCursor()
+        self.editor.setTextCursor(cursor)
         cursor.beginEditBlock()
 
         if self.copyPasteBuffer[bufferName]['isLine']:
+            logger.warning('in if')
+            if not event[0]['after']:
+                logger.warning('in if not')
+                self.move((self.keyMap[Qt.Key_K], Qt.Key_K))
+
             self.addNewLine(cursor)
             cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
+
+        elif event[0]['after']:
+            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor)
 
         cursor.insertText(self.copyPasteBuffer[bufferName]['text'])
 

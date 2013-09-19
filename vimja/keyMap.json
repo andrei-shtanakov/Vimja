@@ -93,22 +93,31 @@
     "88": {
         "Function": "bufferChars",
         "MoveOperation": "selectChar",
+        "isLine": "False",
         "Key": "x"
     },
     "80": {
         "Function": "paste",
+        "after": "True",
         "Key": "p"
+    },
+    "16777248,80": {
+        "Function": "paste",
+        "after": "False",
+        "Key": "P"
     },
 
     "BUFFER_COMMANDS": {
         "68": {
             "Function": "bufferChars",
             "MoveOperation": "selectLine",
+            "isLine": "True",
             "Key": "d"
         },
         "89": {
             "Function": "bufferChars",
             "MoveOperation": "selectLine",
+            "isLine": "True",
             "Key": "y"
         }
     }
