@@ -15,6 +15,8 @@ from PyQt4.QtGui import QTextCursor
 from PyQt4.QtGui import QPlainTextEdit
 from PyQt4.QtCore import SIGNAL
 
+from traceback import format_exc as stackTrace
+
 import re
 
 # ==============================================================================
@@ -251,9 +253,9 @@ class Vimja(plugin.Plugin):
                     self.bufferKeyEventMapper(event.key())
                     return
 
-            except Exception, e:
-                logger.warning('There was an error in processing key: {} - message: {}'.
-                    format(event.key(), e.message))
+            except Exception:
+                logger.warning('There was an error in processing key: {} - trace:\n{}'.
+                    format(event.key(), stackTrace()))
 
             #Otherwise allow the editor to handle said event in the default manner
             return function(event)
@@ -275,10 +277,11 @@ class Vimja(plugin.Plugin):
         self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
             Qt.Key_Escape, ',')
 
-        customKeyEvent = (self.keyMap.get(self.keyPressBuffer, False), key)
+        customKeyEvent = {'details': self.keyMap.get(self.keyPressBuffer, False),
+            'key': key}
 
-        if customKeyEvent[0] and callable(customKeyEvent[0]['Function']):
-            success = customKeyEvent[0]['Function'](customKeyEvent)
+        if customKeyEvent['details'] and callable(customKeyEvent['details']['Function']):
+            success = customKeyEvent['details']['Function'](customKeyEvent)
             self.keyPressBuffer = ''
 
         else:
@@ -290,17 +293,20 @@ class Vimja(plugin.Plugin):
         self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
             Qt.Key_Escape, ',')
 
-        bufferKeyEvent = (self.keyMap['BUFFER_COMMANDS'].get(
-            self.keyPressBuffer, False), key)
+        bufferKeyEvent = {'details': self.keyMap['BUFFER_COMMANDS'].get(
+            self.keyPressBuffer, False), 'key': key}
 
         #if it's buffer specific functionality (ex: d or y)
-        if not bufferKeyEvent[0] or not callable(bufferKeyEvent[0]['Function']):
-            bufferKeyEvent = (self.keyMap.get(self.keyPressBuffer, False), key)
+        if not bufferKeyEvent['details'] or \
+            not callable(bufferKeyEvent['details']['Function']):
 
-        if bufferKeyEvent[0] and callable(bufferKeyEvent[0]['Function']):
-            success = bufferKeyEvent[0]['Function'](bufferKeyEvent)
+            bufferKeyEvent = {'details': self.keyMap.get(self.keyPressBuffer, False),
+                'key': key}
+
+        if bufferKeyEvent['details'] and callable(bufferKeyEvent['details']['Function']):
+            success = bufferKeyEvent['details']['Function'](bufferKeyEvent)
             self.keyPressBuffer = ''
-            self.switchMode((self.keyMap[Qt.Key_Escape], Qt.Key_Escape))
+            self.switchMode({'details': self.keyMap[Qt.Key_Escape], 'key': Qt.Key_Escape})
 
         return success
 
@@ -314,10 +320,10 @@ class Vimja(plugin.Plugin):
             self.editor.setTextCursor(cursor)
             cursor.beginEditBlock()
 
-            event[0]['MoveOperation'](cursor)
+            event['details']['MoveOperation'](cursor)
 
             self.copyPasteBuffer[bufferName]['text'] = cursor.selectedText()
-            self.copyPasteBuffer[bufferName]['isLine'] = event[0]['isLine']
+            self.copyPasteBuffer[bufferName]['isLine'] = event['details']['isLine']
 
             logger.info('text: "{}"'.format(self.copyPasteBuffer[bufferName]['text']))
             logger.info('isLine: {}'.format(
@@ -327,11 +333,11 @@ class Vimja(plugin.Plugin):
                 cursor.removeSelectedText()
                 cursor.deleteChar()
 
-            elif event[1] == Qt.Key_X:
+            elif event['key'] == Qt.Key_X:
                 cursor.removeSelectedText()
 
-        except Exception, e:
-            logger.warning('copy/cut error: {}'.format(e.message))
+        except Exception:
+            logger.warning('copy/cut error: {}'.format(stackTrace()))
 
         cursor.endEditBlock()
 
@@ -352,20 +358,20 @@ class Vimja(plugin.Plugin):
 
             if self.copyPasteBuffer[bufferName]['isLine']:
                 logger.info('in if')
-                if not event[0]['after']:
+                if not event['details']['after']:
                     logger.info('in if not')
                     self.move((self.keyMap[Qt.Key_K], Qt.Key_K))
 
                 self.addNewLine(cursor)
                 cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
 
-            elif event[0]['after']:
+            elif event['details']['after']:
                 cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor)
 
             cursor.insertText(self.copyPasteBuffer[bufferName]['text'])
 
-        except Exception, e:
-            logger.warning('pasting error: {}'.format(e.message))
+        except Exception:
+            logger.warning('pasting error: {}'.format(stackTrace()))
 
         cursor.endEditBlock()
 
@@ -399,9 +405,9 @@ class Vimja(plugin.Plugin):
 
         '''
 
-        self.mode = event[0]['Mode']
-        self.defaultCursorMoveType = event[0]['Anchor']
-        self.editor.setCursorWidth(event[0]['CursorWidth'])
+        self.mode = event['details']['Mode']
+        self.defaultCursorMoveType = event['details']['Anchor']
+        self.editor.setCursorWidth(event['details']['CursorWidth'])
 
         return True
 
@@ -417,11 +423,12 @@ class Vimja(plugin.Plugin):
 
         success = True
 
-        moveOperation = getattr(QTextCursor, event[0]['MoveOperation'], False)
+        moveOperation = getattr(QTextCursor, event['details']['MoveOperation'], False)
 
         if moveOperation is not False:
             cursor = self.editor.textCursor()
-            cursor.movePosition(moveOperation, self.defaultCursorMoveType, event[0]['N'])
+            cursor.movePosition(moveOperation, self.defaultCursorMoveType,
+                event['details']['N'])
 
             self.editor.setTextCursor(cursor)
 
@@ -436,7 +443,7 @@ class Vimja(plugin.Plugin):
 
     def finish(self):
         # Shutdown your plugin
-        pass
+        logger.info('Shutting down Vimja\n')
 
     def get_preferences_widget(self):
         # Return a widget for customize your plugin
