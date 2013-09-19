@@ -44,14 +44,39 @@ class Vimja(plugin.Plugin):
     # PRIVATE HELPERS
     # ==============================================================================
 
+    def selectLine(self, cursor):
+        ''' Selects the whole line
+
+        @arg QTextCursor cursor cursor being used
+
+        '''
+
+        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+
+    def selectChar(self, cursor):
+        ''' Selects the next character
+
+        @arg QTextCursor cursor cursor being used
+
+        '''
+
+        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+
     def addNewLine(self, cursor):
+        ''' Inserts a new line below the current line
+
+        @arg QTextCursor cursor cursor being used
+
+        '''
+
         cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.MoveAnchor)
         cursor.insertBlock()
 
     def getPos(self):
         ''' Get the line and column number of the cursor.
 
-        @ret tuple(line, col): A two element tuple containing the line and column numbers
+        @ret tuple (line, col) A two element tuple containing the line and column numbers
 
         '''
         line = self.editor.textCursor().blockNumber()
@@ -62,7 +87,7 @@ class Vimja(plugin.Plugin):
     def getKeyMap(self, path):
         ''' Gets the key map from the given json file
 
-        @arg filePath(path): Path to keyMap.json
+        @arg filePath path Path to keyMap.json
 
         '''
 
@@ -73,10 +98,10 @@ class Vimja(plugin.Plugin):
         ''' Converts a collection recursively, turning all unicode strings into
         either strings, ints or attributes of the Vimja class.
 
-        @arg data: A variable who's contents are to be converted from unicode
+        @arg mixed data A variable who's contents are to be converted from unicode
 
-        @ret data: The initial variable except the contents have now been changed from
-            unicode to any of the above mentioned types.
+        @ret mixed data The initial variable except the contents have now been changed
+            from unicode to any of the above mentioned types.
 
         '''
 
@@ -114,9 +139,9 @@ class Vimja(plugin.Plugin):
     def isNum(self, string):
         ''' Checks to see if a given string is a valid number.
 
-        @arg str(string): A string to be checked as a potential number
+        @arg str string A string to be checked as a potential number
 
-        @ret bool(isNum): True if the string is a number, False otherwise.
+        @ret bool isNum True if the string is a number, False otherwise.
             Accepts strings of the format: [+-]\d*(\.){1}\d*
 
         '''
@@ -129,6 +154,17 @@ class Vimja(plugin.Plugin):
 
     #TODO: Don't flip flop between integer and string
     def appendDelimitedStr(self, newVal, string, resetVal, delimiter):
+        ''' Adds the passed in value to the passed in string using the passed in
+        delimiter and clears the string if the value is the reset value
+
+        @arg mixed newVal value to be added
+        @arg str string the string to be added to
+        @arg mixed resetVal the value that is specified to reset the entire string
+        @arg chr delimiter the char that delimits the string
+
+        @ret string string the string after processing
+
+        '''
         if newVal == resetVal or string == '':
             string = newVal
         else:
@@ -227,9 +263,9 @@ class Vimja(plugin.Plugin):
         said events depending on whether or not the user is in normal mode or
         insert mode
 
-        @arg function: The default event handler.
+        @arg func function The default event handler.
 
-        @ret func(intercepKeyEvent): A key event interceptor, decides what to do with
+        @ret func intercepKeyEvent A key event interceptor, decides what to do with
             each key press.
 
         '''
@@ -267,9 +303,9 @@ class Vimja(plugin.Plugin):
         ''' Takes in the key event and determines what function should be called
         in order to handle said event.
 
-        @arg event: KeyPressEvent that is used to determine the appropriate handler
+        @arg int key KeyPressEvent that is used to determine the appropriate handler
 
-        @ret success: Returns the exit status of the event handler (True or False) or
+        @ret mixed success Returns the exit status of the event handler (True or False) or
             it returns None if no handler was found
 
         '''
@@ -290,6 +326,17 @@ class Vimja(plugin.Plugin):
         return success
 
     def bufferKeyEventMapper(self, key):
+        ''' Takes in the key event and determines what function should be called
+        in order to handle said event if we are attempting to cut/copy.
+
+        @arg int key integer value of the key pressed, used to determine the
+            appropriate handler
+
+        @ret mixed success Returns the exit status of the event handler (True or False) or
+            it returns None if no handler was found
+
+        '''
+
         self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
             Qt.Key_Escape, ',')
 
@@ -308,6 +355,9 @@ class Vimja(plugin.Plugin):
             self.keyPressBuffer = ''
             self.switchMode({'details': self.keyMap[Qt.Key_Escape], 'key': Qt.Key_Escape})
 
+        else:
+            success = None
+
         return success
 
 # ==============================================================================
@@ -315,24 +365,44 @@ class Vimja(plugin.Plugin):
 # ==============================================================================
 
     def bufferChars(self, event, bufferName=0):
+        ''' Selects the appropriate text then adds it to the appropriate buffer then
+        deletes it if it was cut event.
+
+        @arg dict event containing a buffer dictionary created from the keyPressEvent and
+            it's corresponding keyMap json object
+
+        @arg mixed bufferName the index for the buffer to be added to
+
+        @ret mixed True if copy/cut was success False otherwise
+
+        '''
+
         try:
+            #get the cursor and prepare to edit the file
             cursor = self.editorService.get_actual_tab().textCursor()
             self.editor.setTextCursor(cursor)
             cursor.beginEditBlock()
 
+            #perform the appropriate selection
             event['details']['MoveOperation'](cursor)
 
+            #add the text to the buffer
             self.copyPasteBuffer[bufferName]['text'] = cursor.selectedText()
+
+            #if the text was a full line special behaviour is expected for pasting
             self.copyPasteBuffer[bufferName]['isLine'] = event['details']['isLine']
 
             logger.info('text: "{}"'.format(self.copyPasteBuffer[bufferName]['text']))
             logger.info('isLine: {}'.format(
                 self.copyPasteBuffer[bufferName]['isLine']))
 
+            #TODO: consolidate this if else statement
+            #if we are in delete mode remove the text and the new line
             if self.mode == self.DELETE_MODE:
                 cursor.removeSelectedText()
                 cursor.deleteChar()
 
+            #if we are just deleting a character simply remove this character
             elif event['key'] == Qt.Key_X:
                 cursor.removeSelectedText()
 
@@ -341,33 +411,49 @@ class Vimja(plugin.Plugin):
 
         cursor.endEditBlock()
 
-    def selectLine(self, cursor):
-        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-
-    def selectChar(self, cursor):
-        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
-
     def paste(self, event, bufferName=0):
+        ''' Selects the appropriate text then adds it to the appropriate buffer then
+        deletes it if it was cut event.
+
+        @arg dict event containing a buffer dictionary created from the keyPressEvent and
+            it's corresponding keyMap json object
+
+        @arg mixed bufferName the index for the buffer to be added to
+
+        @ret mixed True if copy/cut was success False otherwise
+
+        '''
+
         try:
             logger.info('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
 
+            #get the cursor and prepare to edit the file
             cursor = self.editorService.get_actual_tab().textCursor()
             self.editor.setTextCursor(cursor)
             cursor.beginEditBlock()
 
+            #if we are pasting a whole line we need to create an empty line above/below
+            #the current line
             if self.copyPasteBuffer[bufferName]['isLine']:
                 logger.info('in if')
+
+                #if we are pasting before the cursor we need to move up so as to create
+                #an empty line above the current one
                 if not event['details']['after']:
                     logger.info('in if not')
                     self.move((self.keyMap[Qt.Key_K], Qt.Key_K))
 
+                #create a new line and move the cursor to the beginning of it to ignore
+                #the auto indentation
                 self.addNewLine(cursor)
                 cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
 
+            #if we are not pasting a whole line and are pasting after the cursor
+            #we need to move the cursor to the right
             elif event['details']['after']:
                 cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor)
 
+            #insert the buffered text into the file
             cursor.insertText(self.copyPasteBuffer[bufferName]['text'])
 
         except Exception:
@@ -377,6 +463,12 @@ class Vimja(plugin.Plugin):
 
     #TODO: Implement search highlighting
     def searchDocument(self, key):
+        ''' Searches the file for the current regex (case insensitive)
+
+        @arg int key the integer value of the key that was just pressed
+
+        '''
+
         if key == Qt.Key_Enter:
             self.isSearching = False
             pass
@@ -398,10 +490,10 @@ class Vimja(plugin.Plugin):
     def switchMode(self, event):
         ''' Changes the mode of the editor
 
-        @arg event: tuple containing a mode dictionary created from the keyPressEvent and
+        @arg dict event containing a mode dictionary created from the keyPressEvent and
             it's corresponding keyMap json object
 
-        @ret success: returns True
+        @ret bool success returns True
 
         '''
 
@@ -414,10 +506,10 @@ class Vimja(plugin.Plugin):
     def move(self, event):
         ''' Moves the cursor
 
-        @arg event: tuple containing a movement dictionary created from the keyPressEvent
+        @arg dict event containing a movement dictionary created from the keyPressEvent
             and it's corresponding keyMap json object
 
-        @ret success: True if the cursor was successfully moved
+        @ret bool success True if the cursor was successfully moved
 
         '''
 
