@@ -5,3 +5,9 @@ Change the keyMap json indices to be the Qt values as opposed to the hard coded 
 Create some kind of decorator for the yank and delete modes
 
 Stop the buffer from including events that aren't meant to be captured by NINJA-IDE
+
+Try creating an instance variable for the cursor instead of getting it every time I need it
+
+Create exception handling
+
+Fix before pasting with full lines
