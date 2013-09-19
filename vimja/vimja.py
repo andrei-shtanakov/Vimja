@@ -1,38 +1,51 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-
-from collections import Iterable
-from collections import Mapping
-
-from ninja_ide.core import plugin
-from ninja_ide.tools import json_manager
-
-from PyQt4 import QtCore
-from PyQt4.QtCore import Qt, QEvent
-from PyQt4.QtGui import QTextCursor
-from PyQt4.QtGui import QPlainTextEdit
-from PyQt4.QtCore import SIGNAL
-
-from traceback import format_exc as stackTrace
-
-import re
+try:
 
 # ==============================================================================
 # LOGGER INITIALIZATION
 # ==============================================================================
-import logging
-logger = logging.getLogger('vimja.log')
-hdlr = logging.FileHandler('/tmp/vimja.log')
-hdlr.setFormatter(
-    logging.Formatter('%(levelname)-8s %(asctime)s %(name)s:%(lineno)-4d %(message)s'))
 
-logger.addHandler(hdlr)
-logger.setLevel(logging.INFO)
+    import logging
+    logger = logging.getLogger('vimja.log')
+    hdlr = logging.FileHandler('/tmp/vimja.log')
+    hdlr.setFormatter(logging.Formatter(
+        '%(levelname)-8s %(asctime)s %(name)s:%(lineno)-4d %(message)s'))
+
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.INFO)
+
+    import os
+    from traceback import format_exc as stackTrace
+
+    from collections import Iterable
+    from collections import Mapping
+
+    from ninja_ide.core import plugin
+    from ninja_ide.tools import json_manager
+
+    from PyQt4.QtCore import Qt
+    from PyQt4.QtGui import QTextCursor
+
+    import re
+
+except Exception as e:
+    errMessage = ''
+
+    try:
+        if isinstance(e, ImportError) and stackTrace is not None:
+            errMessage = 'Import Error: {}'.format(stackTrace())
+            logger.warning(errMessage)
+
+        else:
+            errMessage = 'Unknown Error during import process: {}'.format(stackTrace())
+            logger.warning(errMessage)
+
+    finally:
+        raise Exception(errMessage)
 
 
-#TODO: Add better logging
 class Vimja(plugin.Plugin):
     ''' A vim plugin for the Ninja-IDE.
 
@@ -165,6 +178,7 @@ class Vimja(plugin.Plugin):
         @ret string string the string after processing
 
         '''
+
         if newVal == resetVal or string == '':
             string = newVal
         else:
