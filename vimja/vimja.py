@@ -239,16 +239,21 @@ class Vimja(plugin.Plugin):
 
             '''
 
-            #If the key was the escape key or the user is in normal mode take over the
-            #event handling
-            #TODO: Add in a check for user defined key binding exceptions
-            if event.key() == Qt.Key_Escape or self.mode == self.NORMAL_MODE:
-                self.normalKeyEventMapper(event.key())
-                return
+            try:
+                #If the key was the escape key or the user is in normal mode take over the
+                #event handling
+                #TODO: Add in a check for user defined key binding exceptions
+                if event.key() == Qt.Key_Escape or self.mode == self.NORMAL_MODE:
+                    self.normalKeyEventMapper(event.key())
+                    return
 
-            elif self.mode == self.DELETE_MODE or self.mode == self.YANK_MODE:
-                self.bufferKeyEventMapper(event.key())
-                return
+                elif self.mode == self.DELETE_MODE or self.mode == self.YANK_MODE:
+                    self.bufferKeyEventMapper(event.key())
+                    return
+
+            except Exception, e:
+                logger.warning('There was an error in processing key: {} - message: {}'.
+                    format(event.key(), e.message))
 
             #Otherwise allow the editor to handle said event in the default manner
             return function(event)
@@ -326,7 +331,7 @@ class Vimja(plugin.Plugin):
                 cursor.removeSelectedText()
 
         except Exception, e:
-            logger.warning('error: {}'.format(e.message))
+            logger.warning('copy/cut error: {}'.format(e.message))
 
         cursor.endEditBlock()
 
@@ -338,25 +343,29 @@ class Vimja(plugin.Plugin):
         cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 
     def paste(self, event, bufferName=0):
-        logger.info('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
+        try:
+            logger.info('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
 
-        cursor = self.editorService.get_actual_tab().textCursor()
-        self.editor.setTextCursor(cursor)
-        cursor.beginEditBlock()
+            cursor = self.editorService.get_actual_tab().textCursor()
+            self.editor.setTextCursor(cursor)
+            cursor.beginEditBlock()
 
-        if self.copyPasteBuffer[bufferName]['isLine']:
-            logger.info('in if')
-            if not event[0]['after']:
-                logger.info('in if not')
-                self.move((self.keyMap[Qt.Key_K], Qt.Key_K))
+            if self.copyPasteBuffer[bufferName]['isLine']:
+                logger.info('in if')
+                if not event[0]['after']:
+                    logger.info('in if not')
+                    self.move((self.keyMap[Qt.Key_K], Qt.Key_K))
 
-            self.addNewLine(cursor)
-            cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
+                self.addNewLine(cursor)
+                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
 
-        elif event[0]['after']:
-            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor)
+            elif event[0]['after']:
+                cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor)
 
-        cursor.insertText(self.copyPasteBuffer[bufferName]['text'])
+            cursor.insertText(self.copyPasteBuffer[bufferName]['text'])
+
+        except Exception, e:
+            logger.warning('pasting error: {}'.format(e.message))
 
         cursor.endEditBlock()
 
