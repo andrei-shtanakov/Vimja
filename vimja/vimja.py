@@ -17,15 +17,17 @@ from PyQt4.QtCore import SIGNAL
 
 import re
 
-#TODO: Remove as it is debug info
+# ==============================================================================
+# LOGGER INITIALIZATION
+# ==============================================================================
 import logging
-logging.basicConfig(filename='vimja.log', level=logging.DEBUG)
 logger = logging.getLogger('vimja.log')
 hdlr = logging.FileHandler('/tmp/vimja.log')
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
+hdlr.setFormatter(
+    logging.Formatter('%(levelname)-8s %(asctime)s %(name)s:%(lineno)-4d %(message)s'))
+
 logger.addHandler(hdlr)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 
 #TODO: Add better logging
@@ -130,7 +132,7 @@ class Vimja(plugin.Plugin):
         else:
             string = '{0}{1}{2}'.format(string, delimiter, newVal)
 
-        logger.warning('string: {0}'.format(string))
+        logger.info('string: {0}'.format(string))
         return string
 
 # ==============================================================================
@@ -142,6 +144,8 @@ class Vimja(plugin.Plugin):
         It also sets the editor's keyPressEvent handler to Vimja's interceptor
 
         '''
+
+        logger.info('initializing')
 
         #vim command mode
         self.NORMAL_MODE = 0
@@ -176,7 +180,7 @@ class Vimja(plugin.Plugin):
 
         #get the key map
         self.keyMap = self.getKeyMap(os.path.join(self._path, 'keyMap.json'))
-        logger.warning('keyMap: {}'.format(self.keyMap))
+        logger.info('keyMap: {}'.format(self.keyMap))
 
         #buffer used to hold all of the key presses between valid commands or until
         #the escape key is pressed
@@ -201,7 +205,7 @@ class Vimja(plugin.Plugin):
     def connectKeyPressHandler(self):
         ''' Connects Vimja's key event interceptor to the default key press events '''
 
-        logger.warning('connecting')
+        logger.info('connecting')
 
         #if there is no editor then we haven't captured the key events yet
         if self.editor is None:
@@ -269,7 +273,6 @@ class Vimja(plugin.Plugin):
         customKeyEvent = (self.keyMap.get(self.keyPressBuffer, False), key)
 
         if customKeyEvent[0] and callable(customKeyEvent[0]['Function']):
-            logger.warning('valid command')
             success = customKeyEvent[0]['Function'](customKeyEvent)
             self.keyPressBuffer = ''
 
@@ -311,8 +314,8 @@ class Vimja(plugin.Plugin):
             self.copyPasteBuffer[bufferName]['text'] = cursor.selectedText()
             self.copyPasteBuffer[bufferName]['isLine'] = event[0]['isLine']
 
-            logger.warning('text: {}'.format(self.copyPasteBuffer[bufferName]['text']))
-            logger.warning('isLine: {}'.format(
+            logger.info('text: "{}"'.format(self.copyPasteBuffer[bufferName]['text']))
+            logger.info('isLine: {}'.format(
                 self.copyPasteBuffer[bufferName]['isLine']))
 
             if self.mode == self.DELETE_MODE:
@@ -335,16 +338,16 @@ class Vimja(plugin.Plugin):
         cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 
     def paste(self, event, bufferName=0):
-        logger.warning('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
+        logger.info('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
 
         cursor = self.editorService.get_actual_tab().textCursor()
         self.editor.setTextCursor(cursor)
         cursor.beginEditBlock()
 
         if self.copyPasteBuffer[bufferName]['isLine']:
-            logger.warning('in if')
+            logger.info('in if')
             if not event[0]['after']:
-                logger.warning('in if not')
+                logger.info('in if not')
                 self.move((self.keyMap[Qt.Key_K], Qt.Key_K))
 
             self.addNewLine(cursor)
