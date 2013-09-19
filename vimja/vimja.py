@@ -2,19 +2,15 @@
 # -*- coding: utf-8 -*-
 
 try:
+# ==============================================================================
+# GLOBAL VARIABLES
+# ==============================================================================
+
+    LOG_FILE = 'vimja.log'
 
 # ==============================================================================
-# LOGGER INITIALIZATION
+# IMPORTS
 # ==============================================================================
-
-    import logging
-    logger = logging.getLogger('vimja.log')
-    hdlr = logging.FileHandler('/tmp/vimja.log')
-    hdlr.setFormatter(logging.Formatter(
-        '%(levelname)-8s %(asctime)s %(name)s:%(lineno)-4d %(message)s'))
-
-    logger.addHandler(hdlr)
-    logger.setLevel(logging.INFO)
 
     import os
     from traceback import format_exc as stackTrace
@@ -30,17 +26,24 @@ try:
 
     import re
 
+    import logging
+    logger = logging.getLogger(LOG_FILE)
+    hdlr = logging.FileHandler(os.path.join(os.path.dirname(__file__), '..', LOG_FILE))
+    hdlr.setFormatter(logging.Formatter(
+        '%(levelname)-8s %(asctime)s %(name)s:%(lineno)-4d %(message)s'))
+
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.INFO)
+
 except Exception as e:
     errMessage = ''
 
     try:
         if isinstance(e, ImportError) and stackTrace is not None:
             errMessage = 'Import Error: {}'.format(stackTrace())
-            logger.warning(errMessage)
 
         else:
             errMessage = 'Unknown Error during import process: {}'.format(stackTrace())
-            logger.warning(errMessage)
 
     finally:
         raise Exception(errMessage)
@@ -53,28 +56,9 @@ class Vimja(plugin.Plugin):
 
     '''
 
-    # ==============================================================================
-    # PRIVATE HELPERS
-    # ==============================================================================
-
-    def selectLine(self, cursor):
-        ''' Selects the whole line
-
-        @arg QTextCursor cursor cursor being used
-
-        '''
-
-        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-
-    def selectChar(self, cursor):
-        ''' Selects the next character
-
-        @arg QTextCursor cursor cursor being used
-
-        '''
-
-        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+# ==============================================================================
+# PRIVATE HELPERS
+# ==============================================================================
 
     def addNewLine(self, cursor):
         ''' Inserts a new line below the current line
@@ -378,6 +362,11 @@ class Vimja(plugin.Plugin):
 # CUSTOM EVENT HANDLERS
 # ==============================================================================
 
+    # ==============================================================================
+    # BUFFER HANDLING
+    # ==============================================================================
+
+    #TODO: Make the select function instances of this function as opposed to vimja
     def bufferChars(self, event, bufferName=0):
         ''' Selects the appropriate text then adds it to the appropriate buffer then
         deletes it if it was cut event.
@@ -423,6 +412,25 @@ class Vimja(plugin.Plugin):
             logger.warning('copy/cut error: {}'.format(stackTrace()))
 
         cursor.endEditBlock()
+
+    def selectLine(self, cursor):
+        ''' Selects the whole line
+
+        @arg QTextCursor cursor cursor being used
+
+        '''
+
+        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+
+    def selectChar(self, cursor):
+        ''' Selects the next character
+
+        @arg QTextCursor cursor cursor being used
+
+        '''
+
+        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 
     def paste(self, event, bufferName=0):
         ''' Selects the appropriate text then adds it to the appropriate buffer then
@@ -473,6 +481,10 @@ class Vimja(plugin.Plugin):
 
         cursor.endEditBlock()
 
+    # ==============================================================================
+    # SEARCHING
+    # ==============================================================================
+
     #TODO: Implement search highlighting
     def searchDocument(self, key):
         ''' Searches the file for the current regex (case insensitive)
@@ -497,6 +509,10 @@ class Vimja(plugin.Plugin):
             self.editor.highlight_selected_word(word.string)
             self.editor.set_cursor_position(word.start())
 
+    # ==============================================================================
+    # MODE HANDLING
+    # ==============================================================================
+
     #TODO: Remove the residual cursor size that occurs when changing from insert
         #to command mode
     def switchMode(self, event):
@@ -514,6 +530,10 @@ class Vimja(plugin.Plugin):
         self.editor.setCursorWidth(event['details']['CursorWidth'])
 
         return True
+
+    # ==============================================================================
+    # MOVEMENT HANDLING
+    # ==============================================================================
 
     def move(self, event):
         ''' Moves the cursor
@@ -555,50 +575,54 @@ class Vimja(plugin.Plugin):
 
 
 # ==============================================================================
-# Dev Example Code
+# DEV EXAMPLE CODE
 # ==============================================================================
 
-# ==============================================================================
-# INSERT INTO EDITOR
-# ==============================================================================
-#tab = self.editorService.get_actual_tab()
-#cursor = tab.textCursor()
-#cursor.beginEditBlock()
+    # ==============================================================================
+    # INSERT INTO EDITOR
+    # ==============================================================================
 
-#cursor.insertText('hi')
-#cursor.endEditBlock()
+        #tab = self.editorService.get_actual_tab()
+        #cursor = tab.textCursor()
+        #cursor.beginEditBlock()
 
-# ==============================================================================
-# LOGGER
-# ==============================================================================
-#logger.warning('direction: {}'.format(direction))
-#logger.warning('curPos1: {}'.format(self.getPos()))
+        #cursor.insertText('hi')
+        #cursor.endEditBlock()
 
-#cursor = self.editor.textCursor()
-#cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-#cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-#e = self._main.get_actual_editor()
-#e.cut()
-#return True
+    # ==============================================================================
+    # LOGGER
+    # ==============================================================================
 
-# ==============================================================================
-# DELETE A LINE
-# ==============================================================================
-#cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-#cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-#cursor.removeSelectedText()
-#cursor.deleteChar()
+        #logger.warning('direction: {}'.format(direction))
+        #logger.warning('curPos1: {}'.format(self.getPos()))
 
-# ==============================================================================
-# MOVING
-# ==============================================================================
-#def selectLine(self, cursor):
-    #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-    #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-    #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+        #cursor = self.editor.textCursor()
+        #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+        #e = self._main.get_actual_editor()
+        #e.cut()
+        #return True
 
-#def selectChar(self, cursor):
-    #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
-#
+    # ==============================================================================
+    # DELETE A LINE
+    # ==============================================================================
 
-#self.editor.insert_new_line()
+        #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+        #cursor.removeSelectedText()
+        #cursor.deleteChar()
+
+    # ==============================================================================
+    # MOVING
+    # ==============================================================================
+
+        #def selectLine(self, cursor):
+            #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+            #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+            #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+
+        #def selectChar(self, cursor):
+            #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+        #
+
+        #self.editor.insert_new_line()
