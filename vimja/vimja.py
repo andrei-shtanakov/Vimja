@@ -379,8 +379,7 @@ class Vimja(plugin.Plugin):
 
         try:
             #get the cursor and prepare to edit the file
-            cursor = self.editorService.get_actual_tab().textCursor()
-            self.editor.setTextCursor(cursor)
+            cursor = self.editor.textCursor()
             cursor.beginEditBlock()
 
             #perform the appropriate selection
@@ -428,8 +427,7 @@ class Vimja(plugin.Plugin):
             logger.info('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
 
             #get the cursor and prepare to edit the file
-            cursor = self.editorService.get_actual_tab().textCursor()
-            self.editor.setTextCursor(cursor)
+            cursor = self.editor.textCursor()
             cursor.beginEditBlock()
 
             #if we are pasting a whole line we need to create an empty line above/below
@@ -441,7 +439,7 @@ class Vimja(plugin.Plugin):
                 #an empty line above the current one
                 if not event['details']['after']:
                     logger.info('in if not')
-                    self.move((self.keyMap[Qt.Key_K], Qt.Key_K))
+                    self.move({'details': self.keyMap[Qt.Key_K], 'key': Qt.Key_K})
 
                 #create a new line and move the cursor to the beginning of it to ignore
                 #the auto indentation

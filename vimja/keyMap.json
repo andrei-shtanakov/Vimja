@@ -77,7 +77,7 @@
         "N": "1",
         "Key": "w"
     },
-    "36": {
+    "16777248,36": {
         "Function": "move",
         "MoveOperation": "EndOfLine",
         "N": "1",
