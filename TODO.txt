@@ -9,3 +9,5 @@ Stop the buffer from including events that aren't meant to be captured by NINJA-
 Try creating an instance variable for the cursor instead of getting it every time I need it
 
 Create exception handling
+
+Fix before pasting with full lines

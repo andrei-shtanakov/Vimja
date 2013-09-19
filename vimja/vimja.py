@@ -42,7 +42,7 @@ class Vimja(plugin.Plugin):
 
     def addNewLine(self, cursor):
         cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.MoveAnchor)
-        self.editor.insert_new_line()
+        cursor.insertBlock()
 
     def getPos(self):
         ''' Get the line and column number of the cursor.
@@ -477,3 +477,5 @@ class Vimja(plugin.Plugin):
 #def selectChar(self, cursor):
     #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 #
+
+#self.editor.insert_new_line()
