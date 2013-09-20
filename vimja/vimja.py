@@ -2,11 +2,6 @@
 # -*- coding: utf-8 -*-
 
 try:
-# ==============================================================================
-# GLOBAL VARIABLES
-# ==============================================================================
-
-    LOG_FILE = 'vimja.log'
 
 # ==============================================================================
 # IMPORTS
@@ -26,9 +21,16 @@ try:
 
     import re
 
+# ==============================================================================
+# GLOBAL VARIABLES
+# ==============================================================================
+
+    LOG_FILE = 'vimja.log'
+    PATH = os.path.dirname(__file__)
+
     import logging
     logger = logging.getLogger(LOG_FILE)
-    hdlr = logging.FileHandler(os.path.join(os.path.dirname(__file__), '..', LOG_FILE))
+    hdlr = logging.FileHandler(os.path.join(PATH, '..', LOG_FILE))
     hdlr.setFormatter(logging.Formatter(
         '%(levelname)-8s %(asctime)s %(name)s:%(lineno)-4d %(message)s'))
 
@@ -215,7 +217,7 @@ class Vimja(plugin.Plugin):
         self.defaultCursorMoveType = self.MOVE_ANCHOR
 
         #get the key map
-        self.keyMap = self.getKeyMap(os.path.join(self._path, 'keyMap.json'))
+        self.keyMap = self.getKeyMap(os.path.join(PATH, 'keyMap.json'))
         logger.info('keyMap: {}'.format(self.keyMap))
 
         #buffer used to hold all of the key presses between valid commands or until
@@ -398,15 +400,13 @@ class Vimja(plugin.Plugin):
             logger.info('isLine: {}'.format(
                 self.copyPasteBuffer[bufferName]['isLine']))
 
-            #TODO: consolidate this if else statement
-            #if we are in delete mode remove the text and the new line
-            if self.mode == self.DELETE_MODE:
+            #if we are in delete mode or key pressed was x remove the text
+            if self.mode == self.DELETE_MODE or event['key'] == Qt.Key_X:
                 cursor.removeSelectedText()
-                cursor.deleteChar()
 
-            #if we are just deleting a character simply remove this character
-            elif event['key'] == Qt.Key_X:
-                cursor.removeSelectedText()
+                #if we are removing a whole line make sure to remove the new line chr
+                if event['details']['isLine']:
+                    cursor.deleteChar()
 
         except Exception:
             logger.warning('copy/cut error: {}'.format(stackTrace()))
@@ -521,15 +521,22 @@ class Vimja(plugin.Plugin):
         @arg dict event containing a mode dictionary created from the keyPressEvent and
             it's corresponding keyMap json object
 
-        @ret bool success returns True
+        @ret bool success returns True if there were no errors, False otherwise
 
         '''
 
-        self.mode = event['details']['Mode']
-        self.defaultCursorMoveType = event['details']['Anchor']
-        self.editor.setCursorWidth(event['details']['CursorWidth'])
+        success = True
 
-        return True
+        try:
+            self.mode = event['details']['Mode']
+            self.defaultCursorMoveType = event['details']['Anchor']
+            self.editor.setCursorWidth(event['details']['CursorWidth'])
+
+        except Exception:
+            logger.warning('Error while switching mode: {}'.format(stackTrace()))
+            success = False
+
+        return success
 
     # ==============================================================================
     # MOVEMENT HANDLING
@@ -547,16 +554,22 @@ class Vimja(plugin.Plugin):
 
         success = True
 
-        moveOperation = getattr(QTextCursor, event['details']['MoveOperation'], False)
+        try:
 
-        if moveOperation is not False:
-            cursor = self.editor.textCursor()
-            cursor.movePosition(moveOperation, self.defaultCursorMoveType,
-                event['details']['N'])
+            moveOperation = getattr(QTextCursor, event['details']['MoveOperation'], False)
 
-            self.editor.setTextCursor(cursor)
+            if moveOperation is not False:
+                cursor = self.editor.textCursor()
+                cursor.movePosition(moveOperation, self.defaultCursorMoveType,
+                    event['details']['N'])
 
-        else:
+                self.editor.setTextCursor(cursor)
+
+            else:
+                raise Exception('Invalid move operation: {}'.format(stackTrace()))
+
+        except Exception:
+            logger.warning('Error while moving: {}'.format(stackTrace()))
             success = False
 
         return success
