@@ -1,34 +1,56 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
+try:
 
-from collections import Iterable
-from collections import Mapping
+# ==============================================================================
+# IMPORTS
+# ==============================================================================
 
-from ninja_ide.core import plugin
-from ninja_ide.tools import json_manager
+    import os
+    from traceback import format_exc as stackTrace
 
-from PyQt4 import QtCore
-from PyQt4.QtCore import Qt, QEvent
-from PyQt4.QtGui import QTextCursor
-from PyQt4.QtGui import QPlainTextEdit
-from PyQt4.QtCore import SIGNAL
+    from collections import Iterable
+    from collections import Mapping
 
-import re
+    from ninja_ide.core import plugin
+    from ninja_ide.tools import json_manager
 
-#TODO: Remove as it is debug info
-import logging
-logging.basicConfig(filename='vimja.log', level=logging.DEBUG)
-logger = logging.getLogger('vimja.log')
-hdlr = logging.FileHandler('/tmp/vimja.log')
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.WARNING)
+    from PyQt4.QtCore import Qt
+    from PyQt4.QtGui import QTextCursor
+
+    import re
+
+# ==============================================================================
+# GLOBAL VARIABLES
+# ==============================================================================
+
+    LOG_FILE = 'vimja.log'
+    PATH = os.path.dirname(__file__)
+
+    import logging
+    logger = logging.getLogger(LOG_FILE)
+    hdlr = logging.FileHandler(os.path.join(PATH, '..', LOG_FILE))
+    hdlr.setFormatter(logging.Formatter(
+        '%(levelname)-8s %(asctime)s %(name)s:%(lineno)-4d %(message)s'))
+
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.INFO)
+
+except Exception as e:
+    errMessage = ''
+
+    try:
+        if isinstance(e, ImportError) and stackTrace is not None:
+            errMessage = 'Import Error: {}'.format(stackTrace())
+
+        else:
+            errMessage = 'Unknown Error during import process: {}'.format(stackTrace())
+
+    finally:
+        raise Exception(errMessage)
 
 
-#TODO: Add better logging
 class Vimja(plugin.Plugin):
     ''' A vim plugin for the Ninja-IDE.
 
@@ -36,18 +58,24 @@ class Vimja(plugin.Plugin):
 
     '''
 
-    # ==============================================================================
-    # PRIVATE HELPERS
-    # ==============================================================================
+# ==============================================================================
+# PRIVATE HELPERS
+# ==============================================================================
 
     def addNewLine(self, cursor):
+        ''' Inserts a new line below the current line
+
+        @arg QTextCursor cursor cursor being used
+
+        '''
+
         cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.MoveAnchor)
         cursor.insertBlock()
 
     def getPos(self):
         ''' Get the line and column number of the cursor.
 
-        @ret tuple(line, col): A two element tuple containing the line and column numbers
+        @ret tuple (line, col) A two element tuple containing the line and column numbers
 
         '''
         line = self.editor.textCursor().blockNumber()
@@ -58,7 +86,7 @@ class Vimja(plugin.Plugin):
     def getKeyMap(self, path):
         ''' Gets the key map from the given json file
 
-        @arg filePath(path): Path to keyMap.json
+        @arg filePath path Path to keyMap.json
 
         '''
 
@@ -69,10 +97,10 @@ class Vimja(plugin.Plugin):
         ''' Converts a collection recursively, turning all unicode strings into
         either strings, ints or attributes of the Vimja class.
 
-        @arg data: A variable who's contents are to be converted from unicode
+        @arg mixed data A variable who's contents are to be converted from unicode
 
-        @ret data: The initial variable except the contents have now been changed from
-            unicode to any of the above mentioned types.
+        @ret mixed data The initial variable except the contents have now been changed
+            from unicode to any of the above mentioned types.
 
         '''
 
@@ -110,9 +138,9 @@ class Vimja(plugin.Plugin):
     def isNum(self, string):
         ''' Checks to see if a given string is a valid number.
 
-        @arg str(string): A string to be checked as a potential number
+        @arg str string A string to be checked as a potential number
 
-        @ret bool(isNum): True if the string is a number, False otherwise.
+        @ret bool isNum True if the string is a number, False otherwise.
             Accepts strings of the format: [+-]\d*(\.){1}\d*
 
         '''
@@ -125,12 +153,24 @@ class Vimja(plugin.Plugin):
 
     #TODO: Don't flip flop between integer and string
     def appendDelimitedStr(self, newVal, string, resetVal, delimiter):
+        ''' Adds the passed in value to the passed in string using the passed in
+        delimiter and clears the string if the value is the reset value
+
+        @arg mixed newVal value to be added
+        @arg str string the string to be added to
+        @arg mixed resetVal the value that is specified to reset the entire string
+        @arg chr delimiter the char that delimits the string
+
+        @ret string string the string after processing
+
+        '''
+
         if newVal == resetVal or string == '':
             string = newVal
         else:
             string = '{0}{1}{2}'.format(string, delimiter, newVal)
 
-        logger.warning('string: {0}'.format(string))
+        logger.info('string: {0}'.format(string))
         return string
 
 # ==============================================================================
@@ -142,6 +182,8 @@ class Vimja(plugin.Plugin):
         It also sets the editor's keyPressEvent handler to Vimja's interceptor
 
         '''
+
+        logger.info('initializing')
 
         #vim command mode
         self.NORMAL_MODE = 0
@@ -175,8 +217,8 @@ class Vimja(plugin.Plugin):
         self.defaultCursorMoveType = self.MOVE_ANCHOR
 
         #get the key map
-        self.keyMap = self.getKeyMap(os.path.join(self._path, 'keyMap.json'))
-        logger.warning('keyMap: {}'.format(self.keyMap))
+        self.keyMap = self.getKeyMap(os.path.join(PATH, 'keyMap.json'))
+        logger.info('keyMap: {}'.format(self.keyMap))
 
         #buffer used to hold all of the key presses between valid commands or until
         #the escape key is pressed
@@ -201,7 +243,7 @@ class Vimja(plugin.Plugin):
     def connectKeyPressHandler(self):
         ''' Connects Vimja's key event interceptor to the default key press events '''
 
-        logger.warning('connecting')
+        logger.info('connecting')
 
         #if there is no editor then we haven't captured the key events yet
         if self.editor is None:
@@ -221,9 +263,9 @@ class Vimja(plugin.Plugin):
         said events depending on whether or not the user is in normal mode or
         insert mode
 
-        @arg function: The default event handler.
+        @arg func function The default event handler.
 
-        @ret func(intercepKeyEvent): A key event interceptor, decides what to do with
+        @ret func intercepKeyEvent A key event interceptor, decides what to do with
             each key press.
 
         '''
@@ -235,16 +277,21 @@ class Vimja(plugin.Plugin):
 
             '''
 
-            #If the key was the escape key or the user is in normal mode take over the
-            #event handling
-            #TODO: Add in a check for user defined key binding exceptions
-            if event.key() == Qt.Key_Escape or self.mode == self.NORMAL_MODE:
-                self.normalKeyEventMapper(event.key())
-                return
+            try:
+                #If the key was the escape key or the user is in normal mode take over the
+                #event handling
+                #TODO: Add in a check for user defined key binding exceptions
+                if event.key() == Qt.Key_Escape or self.mode == self.NORMAL_MODE:
+                    self.normalKeyEventMapper(event.key())
+                    return
 
-            elif self.mode == self.DELETE_MODE or self.mode == self.YANK_MODE:
-                self.bufferKeyEventMapper(event.key())
-                return
+                elif self.mode == self.DELETE_MODE or self.mode == self.YANK_MODE:
+                    self.bufferKeyEventMapper(event.key())
+                    return
+
+            except Exception:
+                logger.warning('There was an error in processing key: {} - trace:\n{}'.
+                    format(event.key(), stackTrace()))
 
             #Otherwise allow the editor to handle said event in the default manner
             return function(event)
@@ -256,9 +303,9 @@ class Vimja(plugin.Plugin):
         ''' Takes in the key event and determines what function should be called
         in order to handle said event.
 
-        @arg event: KeyPressEvent that is used to determine the appropriate handler
+        @arg int key KeyPressEvent that is used to determine the appropriate handler
 
-        @ret success: Returns the exit status of the event handler (True or False) or
+        @ret mixed success Returns the exit status of the event handler (True or False) or
             it returns None if no handler was found
 
         '''
@@ -266,11 +313,11 @@ class Vimja(plugin.Plugin):
         self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
             Qt.Key_Escape, ',')
 
-        customKeyEvent = (self.keyMap.get(self.keyPressBuffer, False), key)
+        customKeyEvent = {'details': self.keyMap.get(self.keyPressBuffer, False),
+            'key': key}
 
-        if customKeyEvent[0] and callable(customKeyEvent[0]['Function']):
-            logger.warning('valid command')
-            success = customKeyEvent[0]['Function'](customKeyEvent)
+        if customKeyEvent['details'] and callable(customKeyEvent['details']['Function']):
+            success = customKeyEvent['details']['Function'](customKeyEvent)
             self.keyPressBuffer = ''
 
         else:
@@ -279,20 +326,37 @@ class Vimja(plugin.Plugin):
         return success
 
     def bufferKeyEventMapper(self, key):
+        ''' Takes in the key event and determines what function should be called
+        in order to handle said event if we are attempting to cut/copy.
+
+        @arg int key integer value of the key pressed, used to determine the
+            appropriate handler
+
+        @ret mixed success Returns the exit status of the event handler (True or False) or
+            it returns None if no handler was found
+
+        '''
+
         self.keyPressBuffer = self.appendDelimitedStr(key, self.keyPressBuffer,
             Qt.Key_Escape, ',')
 
-        bufferKeyEvent = (self.keyMap['BUFFER_COMMANDS'].get(
-            self.keyPressBuffer, False), key)
+        bufferKeyEvent = {'details': self.keyMap['BUFFER_COMMANDS'].get(
+            self.keyPressBuffer, False), 'key': key}
 
         #if it's buffer specific functionality (ex: d or y)
-        if not bufferKeyEvent[0] or not callable(bufferKeyEvent[0]['Function']):
-            bufferKeyEvent = (self.keyMap.get(self.keyPressBuffer, False), key)
+        if not bufferKeyEvent['details'] or \
+            not callable(bufferKeyEvent['details']['Function']):
 
-        if bufferKeyEvent[0] and callable(bufferKeyEvent[0]['Function']):
-            success = bufferKeyEvent[0]['Function'](bufferKeyEvent)
+            bufferKeyEvent = {'details': self.keyMap.get(self.keyPressBuffer, False),
+                'key': key}
+
+        if bufferKeyEvent['details'] and callable(bufferKeyEvent['details']['Function']):
+            success = bufferKeyEvent['details']['Function'](bufferKeyEvent)
             self.keyPressBuffer = ''
-            self.switchMode((self.keyMap[Qt.Key_Escape], Qt.Key_Escape))
+            self.switchMode({'details': self.keyMap[Qt.Key_Escape], 'key': Qt.Key_Escape})
+
+        else:
+            success = None
 
         return success
 
@@ -300,65 +364,135 @@ class Vimja(plugin.Plugin):
 # CUSTOM EVENT HANDLERS
 # ==============================================================================
 
+    # ==============================================================================
+    # BUFFER HANDLING
+    # ==============================================================================
+
+    #TODO: Make the select function instances of this function as opposed to vimja
     def bufferChars(self, event, bufferName=0):
+        ''' Selects the appropriate text then adds it to the appropriate buffer then
+        deletes it if it was cut event.
+
+        @arg dict event containing a buffer dictionary created from the keyPressEvent and
+            it's corresponding keyMap json object
+
+        @arg mixed bufferName the index for the buffer to be added to
+
+        @ret mixed True if copy/cut was success False otherwise
+
+        '''
+
         try:
-            cursor = self.editorService.get_actual_tab().textCursor()
-            self.editor.setTextCursor(cursor)
+            #get the cursor and prepare to edit the file
+            cursor = self.editor.textCursor()
             cursor.beginEditBlock()
 
-            event[0]['MoveOperation'](cursor)
+            #perform the appropriate selection
+            event['details']['MoveOperation'](cursor)
 
+            #add the text to the buffer
             self.copyPasteBuffer[bufferName]['text'] = cursor.selectedText()
-            self.copyPasteBuffer[bufferName]['isLine'] = event[0]['isLine']
 
-            logger.warning('text: {}'.format(self.copyPasteBuffer[bufferName]['text']))
-            logger.warning('isLine: {}'.format(
+            #if the text was a full line special behaviour is expected for pasting
+            self.copyPasteBuffer[bufferName]['isLine'] = event['details']['isLine']
+
+            logger.info('text: "{}"'.format(self.copyPasteBuffer[bufferName]['text']))
+            logger.info('isLine: {}'.format(
                 self.copyPasteBuffer[bufferName]['isLine']))
 
-            if self.mode == self.DELETE_MODE:
-                cursor.removeSelectedText()
-                cursor.deleteChar()
-
-            elif event[1] == Qt.Key_X:
+            #if we are in delete mode or key pressed was x remove the text
+            if self.mode == self.DELETE_MODE or event['key'] == Qt.Key_X:
                 cursor.removeSelectedText()
 
-        except Exception, e:
-            logger.warning('error: {}'.format(e.message))
+                #if we are removing a whole line make sure to remove the new line chr
+                if event['details']['isLine']:
+                    cursor.deleteChar()
+
+        except Exception:
+            logger.warning('copy/cut error: {}'.format(stackTrace()))
 
         cursor.endEditBlock()
 
     def selectLine(self, cursor):
+        ''' Selects the whole line
+
+        @arg QTextCursor cursor cursor being used
+
+        '''
+
         cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
         cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
 
     def selectChar(self, cursor):
+        ''' Selects the next character
+
+        @arg QTextCursor cursor cursor being used
+
+        '''
+
         cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
 
     def paste(self, event, bufferName=0):
-        logger.warning('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
+        ''' Selects the appropriate text then adds it to the appropriate buffer then
+        deletes it if it was cut event.
 
-        cursor = self.editorService.get_actual_tab().textCursor()
-        self.editor.setTextCursor(cursor)
-        cursor.beginEditBlock()
+        @arg dict event containing a buffer dictionary created from the keyPressEvent and
+            it's corresponding keyMap json object
 
-        if self.copyPasteBuffer[bufferName]['isLine']:
-            logger.warning('in if')
-            if not event[0]['after']:
-                logger.warning('in if not')
-                self.move((self.keyMap[Qt.Key_K], Qt.Key_K))
+        @arg mixed bufferName the index for the buffer to be added to
 
-            self.addNewLine(cursor)
-            cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
+        @ret mixed True if copy/cut was success False otherwise
 
-        elif event[0]['after']:
-            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor)
+        '''
 
-        cursor.insertText(self.copyPasteBuffer[bufferName]['text'])
+        try:
+            logger.info('pasting: {}'.format(self.copyPasteBuffer[bufferName]))
+
+            #get the cursor and prepare to edit the file
+            cursor = self.editor.textCursor()
+            cursor.beginEditBlock()
+
+            #if we are pasting a whole line we need to create an empty line above/below
+            #the current line
+            if self.copyPasteBuffer[bufferName]['isLine']:
+                logger.info('in if')
+
+                #if we are pasting before the cursor we need to move up so as to create
+                #an empty line above the current one
+                if not event['details']['after']:
+                    logger.info('in if not')
+                    self.move({'details': self.keyMap[Qt.Key_K], 'key': Qt.Key_K})
+
+                #create a new line and move the cursor to the beginning of it to ignore
+                #the auto indentation
+                self.addNewLine(cursor)
+                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
+
+            #if we are not pasting a whole line and are pasting after the cursor
+            #we need to move the cursor to the right
+            elif event['details']['after']:
+                cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor)
+
+            #insert the buffered text into the file
+            cursor.insertText(self.copyPasteBuffer[bufferName]['text'])
+
+        except Exception:
+            logger.warning('pasting error: {}'.format(stackTrace()))
 
         cursor.endEditBlock()
 
+    # ==============================================================================
+    # SEARCHING
+    # ==============================================================================
+
     #TODO: Implement search highlighting
     def searchDocument(self, key):
+        ''' Searches the file for the current regex (case insensitive)
+
+        @arg int key the integer value of the key that was just pressed
+
+        '''
+
         if key == Qt.Key_Enter:
             self.isSearching = False
             pass
@@ -375,45 +509,67 @@ class Vimja(plugin.Plugin):
             self.editor.highlight_selected_word(word.string)
             self.editor.set_cursor_position(word.start())
 
+    # ==============================================================================
+    # MODE HANDLING
+    # ==============================================================================
+
     #TODO: Remove the residual cursor size that occurs when changing from insert
         #to command mode
     def switchMode(self, event):
         ''' Changes the mode of the editor
 
-        @arg event: tuple containing a mode dictionary created from the keyPressEvent and
+        @arg dict event containing a mode dictionary created from the keyPressEvent and
             it's corresponding keyMap json object
 
-        @ret success: returns True
-
-        '''
-
-        self.mode = event[0]['Mode']
-        self.defaultCursorMoveType = event[0]['Anchor']
-        self.editor.setCursorWidth(event[0]['CursorWidth'])
-
-        return True
-
-    def move(self, event):
-        ''' Moves the cursor
-
-        @arg event: tuple containing a movement dictionary created from the keyPressEvent
-            and it's corresponding keyMap json object
-
-        @ret success: True if the cursor was successfully moved
+        @ret bool success returns True if there were no errors, False otherwise
 
         '''
 
         success = True
 
-        moveOperation = getattr(QTextCursor, event[0]['MoveOperation'], False)
+        try:
+            self.mode = event['details']['Mode']
+            self.defaultCursorMoveType = event['details']['Anchor']
+            self.editor.setCursorWidth(event['details']['CursorWidth'])
 
-        if moveOperation is not False:
-            cursor = self.editor.textCursor()
-            cursor.movePosition(moveOperation, self.defaultCursorMoveType, event[0]['N'])
+        except Exception:
+            logger.warning('Error while switching mode: {}'.format(stackTrace()))
+            success = False
 
-            self.editor.setTextCursor(cursor)
+        return success
 
-        else:
+    # ==============================================================================
+    # MOVEMENT HANDLING
+    # ==============================================================================
+
+    def move(self, event):
+        ''' Moves the cursor
+
+        @arg dict event containing a movement dictionary created from the keyPressEvent
+            and it's corresponding keyMap json object
+
+        @ret bool success True if the cursor was successfully moved
+
+        '''
+
+        success = True
+
+        try:
+
+            moveOperation = getattr(QTextCursor, event['details']['MoveOperation'], False)
+
+            if moveOperation is not False:
+                cursor = self.editor.textCursor()
+                cursor.movePosition(moveOperation, self.defaultCursorMoveType,
+                    event['details']['N'])
+
+                self.editor.setTextCursor(cursor)
+
+            else:
+                raise Exception('Invalid move operation: {}'.format(stackTrace()))
+
+        except Exception:
+            logger.warning('Error while moving: {}'.format(stackTrace()))
             success = False
 
         return success
@@ -424,7 +580,7 @@ class Vimja(plugin.Plugin):
 
     def finish(self):
         # Shutdown your plugin
-        pass
+        logger.info('Shutting down Vimja\n')
 
     def get_preferences_widget(self):
         # Return a widget for customize your plugin
@@ -432,50 +588,54 @@ class Vimja(plugin.Plugin):
 
 
 # ==============================================================================
-# Dev Example Code
+# DEV EXAMPLE CODE
 # ==============================================================================
 
-# ==============================================================================
-# INSERT INTO EDITOR
-# ==============================================================================
-#tab = self.editorService.get_actual_tab()
-#cursor = tab.textCursor()
-#cursor.beginEditBlock()
+    # ==============================================================================
+    # INSERT INTO EDITOR
+    # ==============================================================================
 
-#cursor.insertText('hi')
-#cursor.endEditBlock()
+        #tab = self.editorService.get_actual_tab()
+        #cursor = tab.textCursor()
+        #cursor.beginEditBlock()
 
-# ==============================================================================
-# LOGGER
-# ==============================================================================
-#logger.warning('direction: {}'.format(direction))
-#logger.warning('curPos1: {}'.format(self.getPos()))
+        #cursor.insertText('hi')
+        #cursor.endEditBlock()
 
-#cursor = self.editor.textCursor()
-#cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-#cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-#e = self._main.get_actual_editor()
-#e.cut()
-#return True
+    # ==============================================================================
+    # LOGGER
+    # ==============================================================================
 
-# ==============================================================================
-# DELETE A LINE
-# ==============================================================================
-#cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-#cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-#cursor.removeSelectedText()
-#cursor.deleteChar()
+        #logger.warning('direction: {}'.format(direction))
+        #logger.warning('curPos1: {}'.format(self.getPos()))
 
-# ==============================================================================
-# MOVING
-# ==============================================================================
-#def selectLine(self, cursor):
-    #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
-    #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
-    #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+        #cursor = self.editor.textCursor()
+        #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+        #e = self._main.get_actual_editor()
+        #e.cut()
+        #return True
 
-#def selectChar(self, cursor):
-    #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
-#
+    # ==============================================================================
+    # DELETE A LINE
+    # ==============================================================================
 
-#self.editor.insert_new_line()
+        #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+        #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+        #cursor.removeSelectedText()
+        #cursor.deleteChar()
+
+    # ==============================================================================
+    # MOVING
+    # ==============================================================================
+
+        #def selectLine(self, cursor):
+            #cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor, 1)
+            #cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor, 1)
+            #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+
+        #def selectChar(self, cursor):
+            #cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1)
+        #
+
+        #self.editor.insert_new_line()

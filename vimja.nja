@@ -24,7 +24,8 @@
     ".ini", 
     ".plugin", 
     ".txt", 
-    ".md"
+    ".md", 
+    ".log"
   ], 
   "project-type": "NINJA-Plugin-Project", 
   "postExecScript": "", 
