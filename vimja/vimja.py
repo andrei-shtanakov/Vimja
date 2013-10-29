@@ -212,8 +212,6 @@ class Vimja(plugin.Plugin):
         #set the default mode to normal mode
         self.mode = self.INSERT_MODE
 
-        self.cursor = None
-
         #set the default cursor movement to MoveAnchor as opposed to KeepAnchor
         #as when the IDE is in DELETE_MODE
         self.defaultCursorMoveType = self.MOVE_ANCHOR
@@ -229,8 +227,9 @@ class Vimja(plugin.Plugin):
         #get the editor service
         self.editorService = self.locator.get_service('editor')
 
-        #initialize the editor to None
+        #initialize the editor and cursor to None
         self.editor = None
+        self.cursor = None
 
         #TODO: find a better way to intercept the events
         #hack to get around the fact that there is no editor when the plugin is being
@@ -251,6 +250,9 @@ class Vimja(plugin.Plugin):
         if self.editor is None:
             #get the actual editor
             self.editor = self.editorService.get_editor()
+
+            #get the cursor
+            self.cursor = self.editor.textCursor()
 
             #set the editor's key press event handler to the interceptor
             self.editor.keyPressEvent = self.getKeyEventInterceptor(
@@ -320,9 +322,7 @@ class Vimja(plugin.Plugin):
         logger.info('customKeyEvent: {}'.format(customKeyEvent))
 
         if customKeyEvent['details'] and callable(customKeyEvent['details']['Function']):
-            self.cursor = self.editor.textCursor()
             if isBuffer or self.keyPressBuffer == Qt.Key_X:
-                #self.cursor = self.editor.textCursor()
                 #self.cursor.beginEditBlock()
 
                 #perform the appropriate selection
