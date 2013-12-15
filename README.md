@@ -2,7 +2,7 @@ Vimja
 ======
 ## A vim plugin for the Ninja-IDE (beta)
 
-Features:
+###Features:
 
 > Movement:
  * j - down
@@ -37,3 +37,7 @@ Features:
 
 @ The pre cursor paste is buggy for a full line paste. It currently inserts a newline above current line and
   then pastes the text at the start of the current line
+
+###Installation
+
+On *nix systems (including Ubuntu and Mac OS X) place the Vimja directory in ~/.ninja_ide/addins/plugins/
